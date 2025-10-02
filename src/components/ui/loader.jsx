@@ -208,3 +208,6 @@ export const LoaderFive = ({
     </div>
   );
 };
+
+// Default Loader export for general use
+export const Loader = LoaderThree;
