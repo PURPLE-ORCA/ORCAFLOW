@@ -34,18 +34,17 @@ model Project {
 }
 
 model Task {
-  id          String         @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus     @default(TODO)
-  priority    TaskPriority   @default(MEDIUM)
+  status      String   @default("TODO")
   dueDate     DateTime?
   labels      String[]
   projectId   String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  assignees   TaskAssignee[]
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assigneeId  String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("tasks")
 }
@@ -78,15 +77,6 @@ model Meeting {
   @@map("meetings")
 }
 
-model TaskAssignee {
-  id     String @id @default(cuid())
-  userId String @db.Uuid
-  taskId String
-  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, taskId])
-  @@map("task_assignees")
-}
 
 model MeetingParticipant {
   id        String      @id @default(cuid())
@@ -100,18 +90,6 @@ model MeetingParticipant {
   @@map("meeting_participants")
 }
 
-enum TaskStatus {
-  TODO
-  DOING
-  DONE
-}
-
-enum TaskPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
 
 enum MeetingRole {
   ORGANIZER
