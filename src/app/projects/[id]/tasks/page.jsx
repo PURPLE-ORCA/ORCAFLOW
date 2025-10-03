@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, MoreHorizontal, Calendar, User } from 'lucide-react';
+import TaskForm from '@/components/forms/TaskForm';
 
 // Placeholder data for the Kanban board
 const initialColumns = {
@@ -156,10 +157,26 @@ function ColumnHeader({ title, count }) {
   );
 }
 
-export default function TasksPage() {
+export default function TasksPage({ params }) {
   const [columns, setColumns] = React.useState(initialColumns);
 
   const getItemValue = React.useCallback((item) => item.id, []);
+
+  // Handle new task creation
+  const handleTaskCreated = (newTask) => {
+    console.log('Task created:', newTask);
+
+    // For now, add the task to the appropriate column based on status
+    const targetColumn = newTask.status || 'todo';
+
+    setColumns(prevColumns => ({
+      ...prevColumns,
+      [targetColumn]: {
+        ...prevColumns[targetColumn],
+        items: [...prevColumns[targetColumn].items, newTask]
+      }
+    }));
+  };
 
   return (
     <div className="h-full">
@@ -171,10 +188,16 @@ export default function TasksPage() {
               Manage and track project tasks using the Kanban board
             </p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
-          </Button>
+          <TaskForm
+            projectId={params?.id}
+            onSubmit={handleTaskCreated}
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+              </Button>
+            }
+          />
         </div>
       </div>
 
