@@ -52,7 +52,7 @@ async function ensureUserProfile(user) {
 // PUT /api/tasks/[taskId] - Update a specific task
 export async function PUT(request, { params }) {
   try {
-    const { taskId } = params;
+    const { taskId } = await params;
 
     // Authenticate user
     const authResult = await authenticateUser(request);
@@ -226,7 +226,7 @@ export async function PUT(request, { params }) {
 // DELETE /api/tasks/[taskId] - Delete a specific task
 export async function DELETE(request, { params }) {
   try {
-    const { taskId } = params;
+    const { taskId } = await params;
 
     // Authenticate user
     const authResult = await authenticateUser(request);

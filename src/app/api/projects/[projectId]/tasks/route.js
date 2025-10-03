@@ -59,9 +59,13 @@ async function ensureUserProfile(user) {
 // GET /api/projects/[projectId]/tasks - Fetch all tasks for a project
 export async function GET(request, { params }) {
   try {
-    const { projectId } = params;
+    console.log('🚀 [DEBUG] GET /api/projects/[projectId]/tasks - Starting request');
+
+    const { projectId } = await params;
+    console.log('🚀 [DEBUG] Project ID:', projectId);
 
     // Authenticate user
+    console.log('🚀 [DEBUG] Authenticating user...');
     const authResult = await authenticateUser(request);
     if (authResult.error) {
       return NextResponse.json(
@@ -81,9 +85,9 @@ export async function GET(request, { params }) {
     // Validate query parameters
     const { searchParams } = new URL(request.url);
     const queryResult = getTasksQuerySchema.safeParse({
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      status: searchParams.get('status'),
+      page: searchParams.get('page') || '1',
+      limit: searchParams.get('limit') || '50',
+      status: searchParams.get('status') || undefined,
     });
 
     if (!queryResult.success) {
@@ -103,11 +107,13 @@ export async function GET(request, { params }) {
     const { page, limit, status } = queryResult.data;
 
     // Verify project exists and user has access
+    console.log('🚀 [DEBUG] Verifying project exists...');
     const project = await prisma.project.findUnique({
       where: { id: projectId }
     });
 
     if (!project) {
+      console.log('🚨 [DEBUG] Project not found:', projectId);
       return NextResponse.json(
         {
           success: false,
@@ -120,6 +126,7 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
+    console.log('🚀 [DEBUG] Project found:', project.title);
 
     // Build where clause for filtering
     const whereClause = {
@@ -134,6 +141,8 @@ export async function GET(request, { params }) {
     const skip = (page - 1) * limit;
 
     // Fetch tasks with related data
+    console.log('🚀 [DEBUG] Fetching tasks from database...');
+    console.log('🚀 [DEBUG] Where clause:', whereClause);
     const tasks = await prisma.task.findMany({
       where: whereClause,
       include: {
@@ -142,15 +151,16 @@ export async function GET(request, { params }) {
             id: true,
             title: true,
           }
-        },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          }
         }
+        // TODO: Add assignee relation when TaskAssignee model is implemented
+        // assignee: {
+        //   select: {
+        //     id: true,
+        //     name: true,
+        //     email: true,
+        //     avatar: true,
+        //   }
+        // }
       },
       orderBy: [
         { status: 'asc' },
@@ -159,6 +169,7 @@ export async function GET(request, { params }) {
       skip,
       take: limit,
     });
+    console.log('🚀 [DEBUG] Tasks fetched successfully:', tasks.length);
 
     // Get total count for pagination
     const totalCount = await prisma.task.count({
@@ -167,6 +178,7 @@ export async function GET(request, { params }) {
 
     const totalPages = Math.ceil(totalCount / limit);
 
+    console.log('🚀 [DEBUG] Returning successful response with', tasks.length, 'tasks');
     return NextResponse.json({
       success: true,
       data: tasks,
@@ -220,11 +232,12 @@ export async function GET(request, { params }) {
 // POST /api/projects/[projectId]/tasks - Create a new task
 export async function POST(request, { params }) {
   try {
-    const { projectId } = params;
+    const { projectId } = await params;
 
     // Authenticate user
     const authResult = await authenticateUser(request);
     if (authResult.error) {
+      console.log('🚨 [DEBUG] Authentication failed:', authResult.error);
       return NextResponse.json(
         {
           success: false,
@@ -238,6 +251,7 @@ export async function POST(request, { params }) {
     }
 
     const { user } = authResult;
+    console.log('🚀 [DEBUG] User authenticated:', user.email);
 
     // Ensure user profile exists
     await ensureUserProfile(user);

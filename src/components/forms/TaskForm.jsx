@@ -10,8 +10,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CalendarIcon, Plus, X } from 'lucide-react';
+import { CalendarIcon, Plus, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { createClient } from '@supabase/supabase-js';
 
 const TaskForm = ({ onSubmit, trigger, projectId }) => {
   const [open, setOpen] = useState(false);
@@ -20,12 +21,20 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
     description: '',
     assignee: '',
     dueDate: null,
-    status: 'todo',
-    tags: [],
+    status: 'TODO',
+    labels: [],
     projectId: projectId || ''
   });
   const [errors, setErrors] = useState({});
   const [tagInput, setTagInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  // Initialize Supabase client
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 
   // Form validation
   const validateForm = () => {
@@ -40,42 +49,76 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    // Prepare task data
-    const taskData = {
-      ...formData,
-      id: `task-${Date.now()}`, // Temporary ID for now
-      createdAt: new Date().toISOString(),
-      priority: 'medium', // Default priority
-    };
+    setIsSubmitting(true);
+    setSubmitError('');
 
-    // Log to console for now (will be replaced with Supabase integration)
-    console.log('New task data:', taskData);
+    try {
+      // Get authentication token
+      const { data: { session } } = await supabase.auth.getSession();
 
-    // Call the onSubmit callback if provided
-    if (onSubmit) {
-      onSubmit(taskData);
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please sign in again.');
+      }
+
+      // Prepare task data for API
+      const taskData = {
+        title: formData.title,
+        description: formData.description || undefined,
+        status: formData.status,
+        dueDate: formData.dueDate ? formData.dueDate.toISOString() : undefined,
+        labels: formData.labels,
+        assigneeId: formData.assignee || undefined,
+      };
+
+      // Call the API
+      const response = await fetch(`/api/projects/${projectId}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to create task');
+      }
+
+      const { data: newTask } = await response.json();
+
+      // Call the onSubmit callback if provided (for parent component updates)
+      if (onSubmit) {
+        onSubmit(newTask);
+      }
+
+      // Reset form and close dialog
+      setFormData({
+        title: '',
+        description: '',
+        assignee: '',
+        dueDate: null,
+        status: 'TODO',
+        labels: [],
+        projectId: projectId || ''
+      });
+      setErrors({});
+      setTagInput('');
+      setOpen(false);
+
+    } catch (err) {
+      console.error('Error creating task:', err);
+      setSubmitError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Reset form and close dialog
-    setFormData({
-      title: '',
-      description: '',
-      assignee: '',
-      dueDate: null,
-      status: 'todo',
-      tags: [],
-      projectId: projectId || ''
-    });
-    setErrors({});
-    setTagInput('');
-    setOpen(false);
   };
 
   // Handle input changes
@@ -96,15 +139,15 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
 
   // Handle adding tags
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      handleInputChange('tags', [...formData.tags, tagInput.trim()]);
+    if (tagInput.trim() && !formData.labels.includes(tagInput.trim())) {
+      handleInputChange('labels', [...formData.labels, tagInput.trim()]);
       setTagInput('');
     }
   };
 
   // Handle removing tags
   const handleRemoveTag = (tagToRemove) => {
-    handleInputChange('tags', formData.tags.filter(tag => tag !== tagToRemove));
+    handleInputChange('labels', formData.labels.filter(tag => tag !== tagToRemove));
   };
 
   // Handle tag input key press
@@ -234,9 +277,9 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
             </div>
 
             {/* Display tags */}
-            {formData.tags.length > 0 && (
+            {formData.labels.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {formData.tags.map((tag, index) => (
+                {formData.labels.map((tag, index) => (
                   <Badge key={index} variant="secondary" className="flex items-center gap-1">
                     {tag}
                     <Button
@@ -254,13 +297,27 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
             )}
           </div>
 
+          {/* Error Display */}
+          {submitError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{submitError}</p>
+            </div>
+          )}
+
           {/* Form Actions */}
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">
-              Create Task
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Task'
+              )}
             </Button>
           </div>
         </form>
