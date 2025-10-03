@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -16,7 +15,44 @@ export async function GET(request) {
   console.log('All params:', Object.fromEntries(requestUrl.searchParams));
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies });
+    const response = NextResponse.redirect(`${requestUrl.origin}/projects`);
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          get(name) {
+            return request.cookies.get(name)?.value;
+          },
+          set(name, value, options) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+          },
+          remove(name, options) {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            });
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            });
+          },
+        },
+      }
+    );
+
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     console.log('Session exchange result:', {
@@ -34,11 +70,13 @@ export async function GET(request) {
     // Verify session was actually created
     const { data: sessionData } = await supabase.auth.getSession();
     console.log('Session after exchange:', !!sessionData.session);
+
+    return response;
   } else if (errorParam) {
     console.error('OAuth error from provider:', { errorParam, errorDescription });
     return NextResponse.redirect(`${requestUrl.origin}/auth/signin?error=oauth_error`);
   }
 
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(`${requestUrl.origin}/projects`);
+  // If no code or error, redirect to signin
+  return NextResponse.redirect(`${requestUrl.origin}/auth/signin`);
 }
