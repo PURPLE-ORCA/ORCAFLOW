@@ -14,7 +14,7 @@ export default function ProjectCard({ project }) {
   };
 
   return (
-    <Link href={`/projects/${project.id}`}>
+    <Link href={`/projects/${project.id}/tasks`}>
       <Card className="hover:shadow-md transition-shadow duration-200 cursor-pointer">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
