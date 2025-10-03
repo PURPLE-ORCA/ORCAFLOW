@@ -77,6 +77,11 @@ export async function middleware(req) {
     req.nextUrl.pathname === route || req.nextUrl.pathname.startsWith(route + '/')
   );
 
+  console.log('Middleware - Path:', req.nextUrl.pathname);
+  console.log('Middleware - Session exists:', !!session);
+  console.log('Middleware - Is protected route:', isProtectedRoute);
+  console.log('Middleware - Is auth route:', isAuthRoute);
+
   // If accessing protected route without session, redirect to signin
   if (isProtectedRoute && !session) {
     const redirectUrl = new URL('/auth/signin', req.url);
