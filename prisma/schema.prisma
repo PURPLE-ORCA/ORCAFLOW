@@ -9,29 +9,25 @@ datasource db {
 }
 
 model User {
-  id                  String               @id @default(cuid())
-  email               String               @unique
-  name                String?
-  avatar              String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  meetingParticipants MeetingParticipant[]
-  projects            Project[]
-  taskAssignees       TaskAssignee[]
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@map("users")
+  @@map("profiles")
 }
 
 model Project {
   id          String    @id @default(cuid())
   title       String
   description String?
-  createdBy   String
+  createdBy   String    @db.Uuid
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   meetings    Meeting[]
   notes       Note[]
-  creator     User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   tasks       Task[]
 
   @@map("projects")
@@ -84,10 +80,9 @@ model Meeting {
 
 model TaskAssignee {
   id     String @id @default(cuid())
-  userId String
+  userId String @db.Uuid
   taskId String
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, taskId])
   @@map("task_assignees")
@@ -95,12 +90,11 @@ model TaskAssignee {
 
 model MeetingParticipant {
   id        String      @id @default(cuid())
-  userId    String
+  userId    String      @db.Uuid
   meetingId String
   role      MeetingRole @default(PARTICIPANT)
   joinedAt  DateTime    @default(now())
   meeting   Meeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, meetingId])
   @@map("meeting_participants")

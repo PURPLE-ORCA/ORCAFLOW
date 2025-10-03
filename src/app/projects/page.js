@@ -43,16 +43,26 @@ export default function ProjectsPage() {
   // Handle project creation
   const handleProjectCreate = async (projectData) => {
     try {
+      // Get the current session to include the access token
+      const { supabase } = await import('@/lib/supabaseClient');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error('No active session found. Please log in again.');
+      }
+
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(projectData),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create project: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to create project: ${response.statusText}`);
       }
 
       // Refresh the projects list
