@@ -15,6 +15,7 @@ model User {
   avatar    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  assignedTasks Task[] @relation("TaskAssignee")
 
   @@map("profiles")
 }
@@ -41,10 +42,11 @@ model Task {
   dueDate     DateTime?
   labels      String[]
   projectId   String
-  assigneeId  String?  @db.Uuid
+  assigneeId  String?  @db.Uuid  // Optional assignee for MVP - can be null
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
 
   @@map("tasks")
 }

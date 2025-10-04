@@ -201,36 +201,18 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
             />
           </div>
 
-          {/* Assignee and Status Row */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Assignee */}
-            <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Input
-                id="assignee"
-                value={formData.assignee}
-                onChange={(e) => handleInputChange('assignee', e.target.value)}
-                placeholder="Assign to..."
-              />
-              <p className="text-xs text-muted-foreground">
-                User selection will be implemented in the next step
-              </p>
-            </div>
-
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">Todo</SelectItem>
-                  <SelectItem value="doing">Doing</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Assignee */}
+          <div className="space-y-2">
+            <Label htmlFor="assignee">Assignee</Label>
+            <Input
+              id="assignee"
+              value={formData.assignee}
+              onChange={(e) => handleInputChange('assignee', e.target.value)}
+              placeholder="Assign to..."
+            />
+            <p className="text-xs text-muted-foreground">
+              User selection will be implemented in the next step
+            </p>
           </div>
 
           {/* Due Date */}

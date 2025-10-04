@@ -38,12 +38,15 @@ async function authenticateUser(request) {
 
 // Helper function to ensure user profile exists
 async function ensureUserProfile(user) {
-  let dbUser = await prisma.user.findUnique({
+  // Note: Using profiles table as per Supabase conventions and Prisma schema mapping
+  const profilesClient = prisma; // Prisma client with profiles table mapping
+
+  let dbUser = await profilesClient.user.findUnique({
     where: { id: user.id }
   });
 
   if (!dbUser) {
-    dbUser = await prisma.user.create({
+    dbUser = await profilesClient.user.create({
       data: {
         id: user.id,
         email: user.email,
@@ -59,13 +62,10 @@ async function ensureUserProfile(user) {
 // GET /api/projects/[projectId]/tasks - Fetch all tasks for a project
 export async function GET(request, { params }) {
   try {
-    console.log('🚀 [DEBUG] GET /api/projects/[projectId]/tasks - Starting request');
 
     const { projectId } = await params;
-    console.log('🚀 [DEBUG] Project ID:', projectId);
 
     // Authenticate user
-    console.log('🚀 [DEBUG] Authenticating user...');
     const authResult = await authenticateUser(request);
     if (authResult.error) {
       return NextResponse.json(
@@ -107,13 +107,11 @@ export async function GET(request, { params }) {
     const { page, limit, status } = queryResult.data;
 
     // Verify project exists and user has access
-    console.log('🚀 [DEBUG] Verifying project exists...');
     const project = await prisma.project.findUnique({
       where: { id: projectId }
     });
 
     if (!project) {
-      console.log('🚨 [DEBUG] Project not found:', projectId);
       return NextResponse.json(
         {
           success: false,
@@ -126,7 +124,6 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
-    console.log('🚀 [DEBUG] Project found:', project.title);
 
     // Build where clause for filtering
     const whereClause = {
@@ -152,7 +149,7 @@ export async function GET(request, { params }) {
             title: true,
           }
         }
-        // TODO: Add assignee relation when TaskAssignee model is implemented
+        // TODO: Add assignee relation when assigneeId column is added to tasks table
         // assignee: {
         //   select: {
         //     id: true,
@@ -251,7 +248,6 @@ export async function POST(request, { params }) {
     }
 
     const { user } = authResult;
-    console.log('🚀 [DEBUG] User authenticated:', user.email);
 
     // Ensure user profile exists
     await ensureUserProfile(user);
@@ -344,15 +340,8 @@ export async function POST(request, { params }) {
             id: true,
             title: true,
           }
-        },
-        assignee: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          }
         }
+        // Removed assignee include for now - can be added back when needed
       }
     });
 
