@@ -28,31 +28,10 @@ const supabase = createClient(
 // Task card component
 function TaskCard({ task }) {
   
-  const handleMouseDown = (e) => {
-    console.log('🚀 [TASKCARD DEBUG] Mouse down event:', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      isTrusted: e.isTrusted,
-      button: e.button,
-      buttons: e.buttons
-    });
-  };
-  
-  const handlePointerDown = (e) => {
-    console.log('🚀 [TASKCARD DEBUG] Pointer down event:', {
-      target: e.target,
-      currentTarget: e.currentTarget,
-      isTrusted: e.isTrusted,
-      pointerType: e.pointerType,
-      button: e.button
-    });
-  };
   
   return (
     <Card
       className="bg-card group hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing select-none"
-      onMouseDown={handleMouseDown}
-      onPointerDown={handlePointerDown}
     >
       <CardHeader className="pb-1">
         <div className="flex items-start justify-between">
@@ -63,10 +42,6 @@ function TaskCard({ task }) {
             variant="ghost"
             size="sm"
             className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log("🚀 [TASKCARD DEBUG] Menu button clicked");
-            }}
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -240,15 +215,8 @@ export default function TasksPage({ params: initialParams }) {
 
   // Handle drag and drop status updates with proper persistence
   const handleMove = async (event) => {
-    console.log('🚀 [KANBAN DEBUG] ========== handleMove CALLED ==========');
 
     const { active, over } = event;
-    console.log('🚀 [KANBAN DEBUG] Full active object:', active);
-    console.log('🚀 [KANBAN DEBUG] Full over object:', over);
-    console.log('🚀 [KANBAN DEBUG] Active ID:', active?.id);
-    console.log('🚀 [KANBAN DEBUG] Over ID:', over?.id);
-    console.log('🚀 [KANBAN DEBUG] Active data:', active?.data);
-    console.log('🚀 [KANBAN DEBUG] Over data:', over?.data);
 
     if (!over) {
       console.log('🚨 [KANBAN DEBUG] No over element - user not hovering over a valid drop zone');
@@ -263,32 +231,55 @@ export default function TasksPage({ params: initialParams }) {
     const activeTaskId = active.id;
     const overId = over.id;
 
-    console.log('🚀 [KANBAN DEBUG] Active task ID:', activeTaskId);
-    console.log('🚀 [KANBAN DEBUG] Over ID (target):', overId);
-    console.log('🚀 [KANBAN DEBUG] Current columns state:', Object.keys(columns));
+    // Find the task being moved and its current column
+    let sourceColumnId = null;
+    let movedTask = null;
+    let originalTask = null;
 
-    // Find the task being moved
-    const allTasks = Object.values(columns).flatMap(col => col.items);
-    const movedTask = allTasks.find(task => task.id === activeTaskId);
+    for (const [columnId, column] of Object.entries(columns)) {
+      const task = column.items.find(task => task.id === activeTaskId);
+      if (task) {
+        sourceColumnId = columnId;
+        originalTask = task; // Keep original task for status comparison
+        movedTask = { ...task, status: overId }; // Update status for optimistic update
+        break;
+      }
+    }
 
-    console.log('🚀 [KANBAN DEBUG] All tasks count:', allTasks.length);
-    console.log('🚀 [KANBAN DEBUG] Moved task found:', movedTask?.title || 'NOT FOUND');
-
-    if (!movedTask) {
-      console.log('🚨 [KANBAN DEBUG] Moved task not found in current columns!');
-      console.log('🚨 [KANBAN DEBUG] Available task IDs:', allTasks.map(t => t.id));
+    if (!movedTask || !sourceColumnId || !originalTask) {
+      console.log('🚨 [KANBAN DEBUG] Moved task, source column, or original task not found!');
       return;
     }
 
-    const newStatus = overId; // The column ID is the status
-
-    if (movedTask.status === newStatus) {
+    if (originalTask.status === overId) {
       console.log('🚨 [KANBAN DEBUG] Task already has this status, no update needed');
       return;
     }
 
-    console.log('🚀 [KANBAN DEBUG] ========== UPDATING TASK ==========');
-    console.log('🚀 [KANBAN DEBUG] Task:', movedTask.title, 'from', movedTask.status, 'to', newStatus);
+    // console.log('🚀 [KANBAN DEBUG] ========== UPDATING TASK ==========');
+    // console.log('🚀 [KANBAN DEBUG] Task:', movedTask.title, 'from', movedTask.status, 'to', overId);
+
+    // Optimistic UI update - move task to new column immediately
+    const updatedColumns = { ...columns };
+
+    // Remove from source column
+    updatedColumns[sourceColumnId] = {
+      ...updatedColumns[sourceColumnId],
+      items: updatedColumns[sourceColumnId].items.filter(task => task.id !== activeTaskId)
+    };
+
+    // Add to target column
+    if (!updatedColumns[overId]) {
+      updatedColumns[overId] = { title: overId.charAt(0).toUpperCase() + overId.slice(1), items: [] };
+    }
+    updatedColumns[overId] = {
+      ...updatedColumns[overId],
+      items: [...updatedColumns[overId].items, movedTask]
+    };
+
+    // Update local state immediately for smooth UX
+    setColumns(updatedColumns);
+    // console.log('🚀 [KANBAN DEBUG] Optimistic UI update applied');
 
     try {
       // Get authentication token
@@ -298,11 +289,11 @@ export default function TasksPage({ params: initialParams }) {
         throw new Error('Authentication required');
       }
 
-      console.log('🚀 [KANBAN DEBUG] Got session for user:', session.user.email);
+      // console.log('🚀 [KANBAN DEBUG] Got session for user:', session.user.email);
 
       // Call API to update task status
       const apiUrl = `/api/tasks/${activeTaskId}`;
-      console.log('🚀 [KANBAN DEBUG] Making API call to:', apiUrl);
+      // console.log('🚀 [KANBAN DEBUG] Making API call to:', apiUrl);
 
       const response = await fetch(apiUrl, {
         method: 'PUT',
@@ -311,16 +302,15 @@ export default function TasksPage({ params: initialParams }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: newStatus.toUpperCase(),
+          status: overId.toUpperCase(),
         }),
       });
 
-      console.log('🚀 [KANBAN DEBUG] API response status:', response.status);
-      console.log('🚀 [KANBAN DEBUG] API response headers:', Object.fromEntries(response.headers.entries()));
+      // console.log('🚀 [KANBAN DEBUG] API response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('🚨 [KANBAN DEBUG] API error response:', errorText);
+        // console.log('🚨 [KANBAN DEBUG] API error response:', errorText);
 
         let errorData;
         try {
@@ -329,23 +319,19 @@ export default function TasksPage({ params: initialParams }) {
           errorData = { message: errorText };
         }
 
-        console.log('🚨 [KANBAN DEBUG] Parsed error data:', errorData);
         throw new Error(errorData.error?.message || errorData.message || 'Failed to update task status');
       }
 
       const responseData = await response.json();
-      console.log('🚀 [KANBAN DEBUG] API success response:', responseData);
-
-      // The Kanban component will handle the local state update
-      // We don't need to call fetchTasks() here as the Kanban component manages its own state
-      console.log('🚀 [KANBAN DEBUG] ========== UPDATE SUCCESSFUL ==========');
+      // console.log('🚀 [KANBAN DEBUG] API success response:', responseData);
+      // console.log('🚀 [KANBAN DEBUG] ========== UPDATE SUCCESSFUL ==========');
 
     } catch (err) {
-      console.error('🚨 [KANBAN DEBUG] ========== UPDATE FAILED ==========');
-      console.error('🚨 [KANBAN DEBUG] Error details:', err);
+      // console.error('🚨 [KANBAN DEBUG] ========== UPDATE FAILED ==========');
+      // console.error('🚨 [KANBAN DEBUG] Error details:', err);
 
-      // On error, we need to revert the optimistic update
-      console.log('🚨 [KANBAN DEBUG] Reverting optimistic update by refreshing from API');
+      // On error, revert the optimistic update by refreshing from API
+      // console.log('🚨 [KANBAN DEBUG] Reverting optimistic update by refreshing from API');
       await fetchTasks();
     }
   };

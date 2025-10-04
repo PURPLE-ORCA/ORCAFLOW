@@ -446,7 +446,7 @@ function KanbanOverlay({
         const rect = element.getBoundingClientRect();
         setDimensions({ width: rect.width, height: rect.height });
       } else {
-        ('🚀 [KANBAN DEBUG] Overlay element not found for selector:', `[data-slot="kanban-${isColumn(activeId) ? 'column' : 'item'}"][data-value="${activeId}"]`);
+        console.log('🚀 [KANBAN DEBUG] Overlay element not found for selector:', `[data-slot="kanban-${isColumn(activeId) ? 'column' : 'item'}"][data-value="${activeId}"]`);
       }
     } else {
       setDimensions(null);
