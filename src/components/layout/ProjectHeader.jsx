@@ -102,17 +102,17 @@ export function ProjectHeader({ project, className }) {
 
         {/* Project actions */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="hidden sm:flex">
+          <Button variant="primary" size="sm" className="hidden sm:flex">
             <IconShare className="w-4 h-4 mr-2" />
             Share
           </Button>
 
-          <Button variant="outline" size="sm">
+          <Button variant="primary" size="sm">
             <IconEdit className="w-4 h-4 mr-2" />
             Edit
           </Button>
 
-          <Button variant="outline" size="sm">
+          <Button variant="primary" size="sm">
             <IconDotsVertical className="w-4 h-4" />
           </Button>
         </div>

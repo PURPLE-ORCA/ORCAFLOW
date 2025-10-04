@@ -86,7 +86,7 @@ function Kanban(
 
   const findContainer = React.useCallback((id) => {
     if (isColumn(id)) return id;
-    return columnIds.find((key) => columns[key].some((item) => getItemValue(item) === id));
+    return columnIds.find((key) => columns[key].items.some((item) => getItemValue(item) === id));
   }, [columns, columnIds, getItemValue, isColumn]);
 
   const handleDragStart = React.useCallback((event) => {

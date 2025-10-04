@@ -43,13 +43,13 @@ export function ProjectSidebar({ project, className }) {
     },
     {
       href: `/projects/${projectId}/notes`,
-      label: 'Notes',
+      label: 'Notes (soon)',
       icon: <IconNotes className="w-5 h-5" />,
       isActive: pathname === `/projects/${projectId}/notes`
     },
     {
       href: `/projects/${projectId}/meetings`,
-      label: 'Meetings',
+      label: 'Meetings (soon)',
       icon: <IconCalendarEvent className="w-5 h-5" />,
       isActive: pathname === `/projects/${projectId}/meetings`
     }

@@ -27,22 +27,52 @@ const supabase = createClient(
 
 // Task card component
 function TaskCard({ task }) {
+  console.log('🚀 [TASKCARD DEBUG] Rendering task:', task.title);
+  console.log('🚀 [TASKCARD DEBUG] Task card CSS classes: cursor-grab, active:cursor-grabbing, select-none');
+  
+  const handleMouseDown = (e) => {
+    console.log('🚀 [TASKCARD DEBUG] Mouse down event:', {
+      target: e.target,
+      currentTarget: e.currentTarget,
+      isTrusted: e.isTrusted,
+      button: e.button,
+      buttons: e.buttons
+    });
+  };
+  
+  const handlePointerDown = (e) => {
+    console.log('🚀 [TASKCARD DEBUG] Pointer down event:', {
+      target: e.target,
+      currentTarget: e.currentTarget,
+      isTrusted: e.isTrusted,
+      pointerType: e.pointerType,
+      button: e.button
+    });
+  };
+  
   return (
-    <Card className="mb-3 bg-background group hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
+    <Card
+      className="bg-card group hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing select-none"
+      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
+    >
+      <CardHeader className="pb-1">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-sm font-medium leading-tight">
+          <CardTitle className="text-md font-medium leading-tight">
             {task.title}
           </CardTitle>
-          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log("🚀 [TASKCARD DEBUG] Menu button clicked");
+            }}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
-        {task.description && (
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            {task.description}
-          </p>
-        )}
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
@@ -53,7 +83,7 @@ function TaskCard({ task }) {
                 {new Date(task.dueDate).toLocaleDateString()}
               </div>
             )}
-            {task.assignee && task.assignee !== 'Unassigned' && (
+            {task.assignee && task.assignee !== "Unassigned" && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <User className="h-3 w-3" />
                 {task.assignee}
@@ -61,11 +91,16 @@ function TaskCard({ task }) {
             )}
           </div>
           <div className="flex gap-1">
-            {task.labels && task.labels.map((label, index) => (
-              <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
-                {label}
-              </Badge>
-            ))}
+            {task.labels &&
+              task.labels.map((label, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="text-xs px-1 py-0"
+                >
+                  {label}
+                </Badge>
+              ))}
           </div>
         </div>
       </CardContent>
@@ -207,18 +242,38 @@ export default function TasksPage({ params: initialParams }) {
 
   // Handle drag and drop status updates
   const handleDragEnd = async (event) => {
+    console.log('🚀 [DEBUG] handleDragEnd called with event:', event);
     const { active, over } = event;
 
-    if (!over) return;
+    if (!over) {
+      console.log('🚨 [DEBUG] No over element, returning');
+      return;
+    }
 
     const activeTaskId = active.id;
     const newStatus = over.id;
+
+    console.log('🚀 [DEBUG] Active task ID:', activeTaskId);
+    console.log('🚀 [DEBUG] New status (over.id):', newStatus);
 
     // Find the task being moved
     const allTasks = Object.values(columns).flatMap(col => col.items);
     const movedTask = allTasks.find(task => task.id === activeTaskId);
 
-    if (!movedTask || movedTask.status === newStatus) return;
+    console.log('🚀 [DEBUG] All tasks:', allTasks.length);
+    console.log('🚀 [DEBUG] Moved task found:', movedTask?.title || 'NOT FOUND');
+
+    if (!movedTask) {
+      console.log('🚨 [DEBUG] Moved task not found!');
+      return;
+    }
+
+    if (movedTask.status === newStatus) {
+      console.log('🚨 [DEBUG] Task already has this status, no update needed');
+      return;
+    }
+
+    console.log('🚀 [DEBUG] Updating task status from', movedTask.status, 'to', newStatus);
 
     try {
       // Get authentication token
@@ -227,6 +282,8 @@ export default function TasksPage({ params: initialParams }) {
       if (!session?.access_token) {
         throw new Error('Authentication required');
       }
+
+      console.log('🚀 [DEBUG] Got session, making API call...');
 
       // Call API to update task status
       const response = await fetch(`/api/tasks/${activeTaskId}`, {
@@ -240,16 +297,21 @@ export default function TasksPage({ params: initialParams }) {
         }),
       });
 
+      console.log('🚀 [DEBUG] API response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('🚨 [DEBUG] API error:', errorData);
         throw new Error(errorData.error?.message || 'Failed to update task status');
       }
+
+      console.log('🚀 [DEBUG] API call successful, refreshing tasks...');
 
       // Refresh tasks to get updated data
       await fetchTasks();
 
     } catch (err) {
-      console.error('Error updating task status:', err);
+      console.error('🚨 [DEBUG] Error updating task status:', err);
       // Revert the optimistic update by refreshing data
       await fetchTasks();
     }
@@ -358,9 +420,9 @@ export default function TasksPage({ params: initialParams }) {
           {Object.entries(columns).map(([columnId, column]) => (
             <KanbanColumn key={columnId} value={columnId}>
               <div className="p-4 bg-muted/30 rounded-lg min-h-[500px]">
-                <ColumnHeader title={column.title} count={column.items.length} />
+                <ColumnHeader title={column.title} count={column.items?.length || 0} />
                 <KanbanColumnContent value={columnId}>
-                  {column.items.map((task) => (
+                  {column.items?.map((task) => (
                     <KanbanItem key={task.id} value={task.id}>
                       <TaskCard task={task} />
                     </KanbanItem>
@@ -384,7 +446,7 @@ export default function TasksPage({ params: initialParams }) {
               );
             }
 
-            const allItems = Object.values(columns).flatMap(col => col.items);
+            const allItems = Object.values(columns).flatMap(col => col.items || []);
             const item = allItems.find(task => task.id === value);
             if (!item) return null;
 
