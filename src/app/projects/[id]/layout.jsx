@@ -24,7 +24,7 @@ export default async function ProjectLayout({ children, params }) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900">
+      <div className="flex h-screen bg-background text-foreground">
         {/* Sidebar */}
         <div className="hidden md:block">
           <ProjectSidebar project={project} />

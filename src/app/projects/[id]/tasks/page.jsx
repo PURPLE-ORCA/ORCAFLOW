@@ -28,7 +28,7 @@ const supabase = createClient(
 // Task card component
 function TaskCard({ task }) {
   return (
-    <Card className="mb-3 group hover:shadow-md transition-shadow">
+    <Card className="mb-3 bg-background group hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="text-sm font-medium leading-tight">

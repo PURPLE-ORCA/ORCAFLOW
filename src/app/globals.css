@@ -76,6 +76,8 @@
 }
 
 @theme inline {
+  --main: var(--main);
+  --mainp: var(--mainp);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
 import {
   IconEdit,
   IconSettings,
@@ -56,7 +57,7 @@ export function ProjectHeader({ project, className }) {
 
   return (
     <div className={cn(
-      'flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900',
+      'flex items-center justify-between py-2 px-4 border-b border-[var(--main)] bg-background',
       className
     )}>
       {/* Left side - Breadcrumb */}
@@ -67,13 +68,13 @@ export function ProjectHeader({ project, className }) {
               <React.Fragment key={index}>
                 <BreadcrumbItem>
                   {item.isCurrentPage ? (
-                    <BreadcrumbPage className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    <BreadcrumbPage className="font-semibold text-foreground">
                       {item.label}
                     </BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink
                       href={item.href}
-                      className="text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                      className="text-foreground hover:text-muted-foreground"
                     >
                       {item.label}
                     </BreadcrumbLink>
@@ -88,6 +89,9 @@ export function ProjectHeader({ project, className }) {
 
       {/* Right side - Project actions and info */}
       <div className="flex items-center gap-3">
+        {/* Theme toggler */}
+        <AnimatedThemeToggler className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors" />
+
         {/* Project status badge */}
         {project && (
           <Badge variant="outline" className="hidden sm:flex">
