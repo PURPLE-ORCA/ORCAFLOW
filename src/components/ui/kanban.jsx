@@ -11,6 +11,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  closestCorners,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -98,6 +100,7 @@ function Kanban(
   }, []);
 
   const handleDragOver = React.useCallback((event) => {
+    // If onMove is provided, let it handle everything
     if (onMove) {
       return;
     }
@@ -149,25 +152,10 @@ function Kanban(
       return;
     }
 
-    // Handle item move callback
+    // Handle item move callback - pass the original event structure
     if (onMove && !isColumn(active.id)) {
-      const activeContainer = findContainer(active.id);
-      const overContainer = findContainer(over.id);
-
-      if (activeContainer && overContainer) {
-        const activeIndex = columns[activeContainer].items.findIndex((item) => getItemValue(item) === active.id);
-        const overIndex = isColumn(over.id)
-          ? columns[overContainer].items.length
-          : columns[overContainer].items.findIndex((item) => getItemValue(item) === over.id);
-
-        onMove({
-          event,
-          activeContainer,
-          activeIndex,
-          overContainer,
-          overIndex,
-        });
-      }
+      console.log('🚀 [KANBAN DEBUG] Calling onMove with event:', { active, over });
+      onMove(event); // Pass the original event structure that @dnd-kit provides
       return;
     }
 
@@ -218,17 +206,11 @@ function Kanban(
     isColumn,
   }), [columns, setColumns, getItemValue, columnIds, activeId, findContainer, isColumn]);
 
-  ('🚀 [KANBAN DEBUG] Kanban component rendering with:', {
-    columnsCount: Object.keys(columns).length,
-    activeId,
-    columnIds,
-    childrenCount: React.Children.count(children)
-  });
-
   return (
     <KanbanContext.Provider value={contextValue}>
       <DndContext
         sensors={sensors}
+        collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}>
@@ -285,17 +267,6 @@ function KanbanColumn({
     transform: CSS.Translate.toString(transform)
   };
 
-  // Debug log to validate the dragging state
-  console.log('🚀 [KANBAN DEBUG] KanbanColumn render:', {
-    value,
-    isSortableDragging,
-    disabled,
-    hasAttributes: !!attributes,
-    hasListeners: !!listeners,
-    hasTransform: !!transform,
-    hasTransition: !!transition
-  });
-
   return (
     <ColumnContext.Provider value={{ attributes, listeners, isDragging: isSortableDragging, disabled }}>
       <div
@@ -350,10 +321,7 @@ function KanbanItem({
    className,
    children,
    disabled
-  }) {
-   ('🚀 [KANBAN DEBUG] KanbanItem rendered for value:', value);
-   ('🚀 [KANBAN DEBUG] KanbanItem props:', { value, disabled, className });
-   
+  }) {   
    const {
      setNodeRef,
      transform,
@@ -417,25 +385,49 @@ function KanbanItemHandle({
 }
 
 function KanbanColumnContent({
-  value,
-  className,
-  children
-}) {
-  const { columns, getItemId } = React.useContext(KanbanContext);
+   value,
+   className,
+   children
+ }) {
+   const { columns, getItemId } = React.useContext(KanbanContext);
 
-  const itemIds = React.useMemo(() => (columns[value].items || []).map(getItemId), [columns, getItemId, value]);
+   const itemIds = React.useMemo(() => (columns[value].items || []).map(getItemId), [columns, getItemId, value]);
 
+   // Use @dnd-kit's useDroppable hook for proper drop zone detection
+   const { setNodeRef, isOver } = useDroppable({
+     id: value, // Use the column ID as the droppable ID
+     data: {
+       type: 'column',
+       columnId: value
+     }
+   });
 
-  return (
-    <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-      <div
-        data-slot="kanban-column-content"
-        className={cn('flex flex-col gap-2', className)}>
-        {children}
-      </div>
-    </SortableContext>
-  );
-}
+   return (
+     <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+       <div
+         ref={setNodeRef}
+         data-slot="kanban-column-content"
+         data-column-id={value}
+         className={cn(
+           'flex flex-col gap-2 min-h-[200px] p-2 rounded-md transition-all duration-200',
+           isOver && 'bg-primary/10 border-2 border-dashed border-primary/50 ring-2 ring-primary/20',
+           className
+         )}
+         style={{
+           minHeight: '200px',
+           position: 'relative'
+         }}>
+         {children}
+         {/* Visual indicator for empty columns */}
+         {itemIds.length === 0 && (
+           <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border-2 border-dashed border-muted-foreground/25 rounded-md">
+             Drop tasks here
+           </div>
+         )}
+       </div>
+     </SortableContext>
+   );
+ }
 
 function KanbanOverlay({
   children,
@@ -453,12 +445,6 @@ function KanbanOverlay({
       if (element) {
         const rect = element.getBoundingClientRect();
         setDimensions({ width: rect.width, height: rect.height });
-        ('🚀 [KANBAN DEBUG] Overlay dimensions updated:', {
-          width: rect.width,
-          height: rect.height,
-          element: element,
-          selector: `[data-slot="kanban-${isColumn(activeId) ? 'column' : 'item'}"][data-value="${activeId}"]`
-        });
       } else {
         ('🚀 [KANBAN DEBUG] Overlay element not found for selector:', `[data-slot="kanban-${isColumn(activeId) ? 'column' : 'item'}"][data-value="${activeId}"]`);
       }

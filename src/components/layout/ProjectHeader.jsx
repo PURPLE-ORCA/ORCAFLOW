@@ -112,9 +112,6 @@ export function ProjectHeader({ project, className }) {
             Edit
           </Button>
 
-          <Button variant="primary" size="sm">
-            <IconDotsVertical className="w-4 h-4" />
-          </Button>
         </div>
       </div>
     </div>

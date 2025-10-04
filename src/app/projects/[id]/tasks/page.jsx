@@ -27,8 +27,6 @@ const supabase = createClient(
 
 // Task card component
 function TaskCard({ task }) {
-  console.log('🚀 [TASKCARD DEBUG] Rendering task:', task.title);
-  console.log('🚀 [TASKCARD DEBUG] Task card CSS classes: cursor-grab, active:cursor-grabbing, select-none');
   
   const handleMouseDown = (e) => {
     console.log('🚀 [TASKCARD DEBUG] Mouse down event:', {
@@ -95,7 +93,7 @@ function TaskCard({ task }) {
               task.labels.map((label, index) => (
                 <Badge
                   key={index}
-                  variant="secondary"
+                  variant="primary"
                   className="text-xs px-1 py-0"
                 >
                   {label}
@@ -240,40 +238,57 @@ export default function TasksPage({ params: initialParams }) {
     await fetchTasks();
   };
 
-  // Handle drag and drop status updates
-  const handleDragEnd = async (event) => {
-    console.log('🚀 [DEBUG] handleDragEnd called with event:', event);
+  // Handle drag and drop status updates with proper persistence
+  const handleMove = async (event) => {
+    console.log('🚀 [KANBAN DEBUG] ========== handleMove CALLED ==========');
+
     const { active, over } = event;
+    console.log('🚀 [KANBAN DEBUG] Full active object:', active);
+    console.log('🚀 [KANBAN DEBUG] Full over object:', over);
+    console.log('🚀 [KANBAN DEBUG] Active ID:', active?.id);
+    console.log('🚀 [KANBAN DEBUG] Over ID:', over?.id);
+    console.log('🚀 [KANBAN DEBUG] Active data:', active?.data);
+    console.log('🚀 [KANBAN DEBUG] Over data:', over?.data);
 
     if (!over) {
-      console.log('🚨 [DEBUG] No over element, returning');
+      console.log('🚨 [KANBAN DEBUG] No over element - user not hovering over a valid drop zone');
+      return;
+    }
+
+    if (!active) {
+      console.log('🚨 [KANBAN DEBUG] No active element - no item being dragged');
       return;
     }
 
     const activeTaskId = active.id;
-    const newStatus = over.id;
+    const overId = over.id;
 
-    console.log('🚀 [DEBUG] Active task ID:', activeTaskId);
-    console.log('🚀 [DEBUG] New status (over.id):', newStatus);
+    console.log('🚀 [KANBAN DEBUG] Active task ID:', activeTaskId);
+    console.log('🚀 [KANBAN DEBUG] Over ID (target):', overId);
+    console.log('🚀 [KANBAN DEBUG] Current columns state:', Object.keys(columns));
 
     // Find the task being moved
     const allTasks = Object.values(columns).flatMap(col => col.items);
     const movedTask = allTasks.find(task => task.id === activeTaskId);
 
-    console.log('🚀 [DEBUG] All tasks:', allTasks.length);
-    console.log('🚀 [DEBUG] Moved task found:', movedTask?.title || 'NOT FOUND');
+    console.log('🚀 [KANBAN DEBUG] All tasks count:', allTasks.length);
+    console.log('🚀 [KANBAN DEBUG] Moved task found:', movedTask?.title || 'NOT FOUND');
 
     if (!movedTask) {
-      console.log('🚨 [DEBUG] Moved task not found!');
+      console.log('🚨 [KANBAN DEBUG] Moved task not found in current columns!');
+      console.log('🚨 [KANBAN DEBUG] Available task IDs:', allTasks.map(t => t.id));
       return;
     }
+
+    const newStatus = overId; // The column ID is the status
 
     if (movedTask.status === newStatus) {
-      console.log('🚨 [DEBUG] Task already has this status, no update needed');
+      console.log('🚨 [KANBAN DEBUG] Task already has this status, no update needed');
       return;
     }
 
-    console.log('🚀 [DEBUG] Updating task status from', movedTask.status, 'to', newStatus);
+    console.log('🚀 [KANBAN DEBUG] ========== UPDATING TASK ==========');
+    console.log('🚀 [KANBAN DEBUG] Task:', movedTask.title, 'from', movedTask.status, 'to', newStatus);
 
     try {
       // Get authentication token
@@ -283,10 +298,13 @@ export default function TasksPage({ params: initialParams }) {
         throw new Error('Authentication required');
       }
 
-      console.log('🚀 [DEBUG] Got session, making API call...');
+      console.log('🚀 [KANBAN DEBUG] Got session for user:', session.user.email);
 
       // Call API to update task status
-      const response = await fetch(`/api/tasks/${activeTaskId}`, {
+      const apiUrl = `/api/tasks/${activeTaskId}`;
+      console.log('🚀 [KANBAN DEBUG] Making API call to:', apiUrl);
+
+      const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -297,22 +315,37 @@ export default function TasksPage({ params: initialParams }) {
         }),
       });
 
-      console.log('🚀 [DEBUG] API response status:', response.status);
+      console.log('🚀 [KANBAN DEBUG] API response status:', response.status);
+      console.log('🚀 [KANBAN DEBUG] API response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.log('🚨 [DEBUG] API error:', errorData);
-        throw new Error(errorData.error?.message || 'Failed to update task status');
+        const errorText = await response.text();
+        console.log('🚨 [KANBAN DEBUG] API error response:', errorText);
+
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+
+        console.log('🚨 [KANBAN DEBUG] Parsed error data:', errorData);
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to update task status');
       }
 
-      console.log('🚀 [DEBUG] API call successful, refreshing tasks...');
+      const responseData = await response.json();
+      console.log('🚀 [KANBAN DEBUG] API success response:', responseData);
 
-      // Refresh tasks to get updated data
-      await fetchTasks();
+      // The Kanban component will handle the local state update
+      // We don't need to call fetchTasks() here as the Kanban component manages its own state
+      console.log('🚀 [KANBAN DEBUG] ========== UPDATE SUCCESSFUL ==========');
 
     } catch (err) {
-      console.error('🚨 [DEBUG] Error updating task status:', err);
-      // Revert the optimistic update by refreshing data
+      console.error('🚨 [KANBAN DEBUG] ========== UPDATE FAILED ==========');
+      console.error('🚨 [KANBAN DEBUG] Error details:', err);
+
+      // On error, we need to revert the optimistic update
+      console.log('🚨 [KANBAN DEBUG] Reverting optimistic update by refreshing from API');
       await fetchTasks();
     }
   };
@@ -355,9 +388,6 @@ export default function TasksPage({ params: initialParams }) {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Tasks</h1>
-              <p className="text-muted-foreground">
-                Manage and track project tasks using the Kanban board
-              </p>
             </div>
             <TaskForm
               projectId={projectId}
@@ -392,9 +422,6 @@ export default function TasksPage({ params: initialParams }) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Tasks</h1>
-            <p className="text-muted-foreground">
-              Manage and track project tasks using the Kanban board
-            </p>
           </div>
           <TaskForm
             projectId={projectId}
@@ -412,7 +439,7 @@ export default function TasksPage({ params: initialParams }) {
       <Kanban
         value={columns}
         onValueChange={setColumns}
-        onDragEnd={handleDragEnd}
+        onMove={handleMove}
         getItemValue={getItemValue}
         className="h-[calc(100vh-12rem)]"
       >

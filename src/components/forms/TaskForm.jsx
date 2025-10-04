@@ -211,7 +211,7 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
               placeholder="Assign to..."
             />
             <p className="text-xs text-muted-foreground">
-              User selection will be implemented in the next step
+              Teannate assignment comming soon
             </p>
           </div>
 

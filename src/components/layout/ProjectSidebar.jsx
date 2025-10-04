@@ -30,12 +30,6 @@ export function ProjectSidebar({ project, className }) {
   // Navigation items
   const navigationItems = [
     {
-      href: `/projects/${projectId}`,
-      label: 'Overview',
-      icon: <IconLayoutKanban className="w-5 h-5" />,
-      isActive: pathname === `/projects/${projectId}`
-    },
-    {
       href: `/projects/${projectId}/tasks`,
       label: 'Tasks',
       icon: <IconLayoutKanban className="w-5 h-5" />,
@@ -67,16 +61,11 @@ export function ProjectSidebar({ project, className }) {
             )}>
               {project?.title || 'Loading...'}
             </h2>
-            {open && project?.description && (
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">
-                {project.description}
-              </p>
-            )}
             {open && (
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary" className="text-xs">
                   <IconUsers className="w-3 h-3 mr-1" />
-                  3 members
+                  X members
                 </Badge>
               </div>
             )}
@@ -114,7 +103,7 @@ export function ProjectSidebar({ project, className }) {
               className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white"
             >
               <IconPlus className="w-4 h-4 mr-2" />
-              New Task
+              New Task (soon)
             </Button>
             <Button
               size="sm"
@@ -122,7 +111,7 @@ export function ProjectSidebar({ project, className }) {
               className="w-full justify-start"
             >
               <IconPlus className="w-4 h-4 mr-2" />
-              New Note
+              New Note (soon)
             </Button>
             <Button
               size="sm"
@@ -130,7 +119,7 @@ export function ProjectSidebar({ project, className }) {
               className="w-full justify-start"
             >
               <IconPlus className="w-4 h-4 mr-2" />
-              Schedule Meeting
+              Schedule Meeting (soon)
             </Button>
           </div>
 
@@ -139,7 +128,7 @@ export function ProjectSidebar({ project, className }) {
             <Link href={`/projects/${projectId}/settings`}>
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                 <IconSettings className="w-4 h-4" />
-                <span>Project Settings</span>
+                <span>Settings (soon)</span>
               </div>
             </Link>
           </div>
