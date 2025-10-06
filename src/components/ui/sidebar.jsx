@@ -1,8 +1,9 @@
-"use client";;
+"use client";
 import { cn } from "@/lib/utils";
-import React, { useState, createContext, useContext } from "react";
+import React, { useState, createContext, useContext, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
+import { Button } from "./button";
 
 const SidebarContext = createContext(undefined);
 
@@ -60,22 +61,85 @@ export const DesktopSidebar = ({
   ...props
 }) => {
   const { open, setOpen, animate } = useSidebar();
+
+  // Prevent body scroll when sidebar is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
+
+  // Close sidebar on escape key press
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && open) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, setOpen]);
+
   return (
     <>
-      <motion.div
-        className={cn(
-          "h-full px-4 py-4 hidden md:flex md:flex-col bg-card text-card-foreground w-[300px] shrink-0",
-          className
-        )}
-        animate={{
-          width: animate ? (open ? "300px" : "50px") : "300px",
-        }}
+      {/* Hover Trigger Area - Only visible on desktop */}
+      <div
+        className="fixed left-0 top-0 w-4 h-full z-50 hidden md:block"
         onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        {...props}
-      >
-        {children}
-      </motion.div>
+      />
+
+      {/* Sidebar Overlay */}
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-[90] hidden md:block"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+            />
+
+            {/* Sidebar Panel */}
+            <motion.div
+              className="fixed left-0 top-0 h-full w-80 bg-card text-card-foreground shadow-xl z-[100] flex flex-col hidden md:flex"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              onMouseLeave={() => setOpen(false)}
+              {...props}
+            >
+              {/* Close button inside sidebar */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setOpen(false)}
+                className="absolute right-4 top-4 z-50 text-muted-foreground hover:text-foreground"
+              >
+                <IconX className="h-4 w-4" />
+              </Button>
+
+              {/* Sidebar content */}
+              <div className="flex-1 overflow-hidden">
+                {children}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 };

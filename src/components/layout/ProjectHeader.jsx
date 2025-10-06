@@ -102,7 +102,7 @@ export function ProjectHeader({ project, className }) {
 
         {/* Project actions */}
         <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" className="hidden sm:flex">
+          {/* <Button variant="primary" size="sm" className="hidden sm:flex">
             <IconShare className="w-4 h-4 mr-2" />
             Share
           </Button>
@@ -110,8 +110,7 @@ export function ProjectHeader({ project, className }) {
           <Button variant="primary" size="sm">
             <IconEdit className="w-4 h-4 mr-2" />
             Edit
-          </Button>
-
+          </Button> */}
         </div>
       </div>
     </div>
