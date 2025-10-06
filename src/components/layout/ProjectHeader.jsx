@@ -92,14 +92,6 @@ export function ProjectHeader({ project, className }) {
         {/* Theme toggler */}
         <AnimatedThemeToggler className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors" />
 
-        {/* Project status badge */}
-        {project && (
-          <Badge variant="outline" className="hidden sm:flex">
-            <IconUsers className="w-3 h-3 mr-1" />
-            3 members
-          </Badge>
-        )}
-
         {/* Project actions */}
         <div className="flex items-center gap-2">
           {/* <Button variant="primary" size="sm" className="hidden sm:flex">
