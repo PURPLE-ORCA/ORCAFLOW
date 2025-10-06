@@ -114,7 +114,7 @@ export const DesktopSidebar = ({
 
             {/* Sidebar Panel */}
             <motion.div
-              className="fixed left-0 top-0 h-full w-80 bg-card text-card-foreground shadow-xl z-[100] flex flex-col hidden md:flex"
+              className="fixed left-0 top-0 h-full w-80 bg-card text-card-foreground shadow-xl z-[100] flex flex-col md:flex"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}

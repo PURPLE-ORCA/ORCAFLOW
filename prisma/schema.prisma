@@ -16,6 +16,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   assignedTasks Task[] @relation("TaskAssignee")
+  projects      ProjectMember[]
 
   @@map("profiles")
 }
@@ -30,6 +31,7 @@ model Project {
   meetings    Meeting[]
   notes       Note[]
   tasks       Task[]
+  members     ProjectMember[]
 
   @@map("projects")
 }
@@ -97,4 +99,23 @@ enum MeetingRole {
   ORGANIZER
   PARTICIPANT
   OBSERVER
+}
+
+enum ProjectRole {
+  ADMIN
+  MEMBER
+}
+
+model ProjectMember {
+  id        String     @id @default(cuid())
+  projectId String
+  userId    String     @db.Uuid
+  role      ProjectRole @default(MEMBER)
+  createdAt DateTime   @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
 }
