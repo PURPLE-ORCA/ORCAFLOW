@@ -17,6 +17,7 @@ model User {
   updatedAt DateTime @updatedAt
   assignedTasks Task[] @relation("TaskAssignee")
   projects      ProjectMember[]
+  invitations   ProjectInvitation[]
 
   @@map("profiles")
 }

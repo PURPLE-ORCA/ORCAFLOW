@@ -178,7 +178,6 @@ export default function TasksPage({ params: initialParams }) {
           dueDate: task.dueDate,
           labels: task.labels || [],
           status: task.status.toLowerCase(),
-          priority: 'medium',
           createdAt: task.createdAt,
           updatedAt: task.updatedAt,
         };
@@ -390,7 +389,7 @@ export default function TasksPage({ params: initialParams }) {
 
         <div className="flex items-center justify-center h-[calc(100vh-12rem)]">
           <div className="text-center">
-            <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+            <AlertCircle className="h-12 w-12 mx-auto text-purple-500 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Failed to load tasks</h3>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchTasks} variant="outline">

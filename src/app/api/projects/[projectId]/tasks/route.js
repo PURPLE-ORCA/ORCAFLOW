@@ -1,7 +1,9 @@
+console.log('🚀 [DEBUG] API Route module loading...');
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import prisma from '@/lib/prisma/client';
 import { z } from 'zod';
+console.log('🚀 [DEBUG] API Route imports completed successfully');
 
 // Initialize Supabase client for server-side operations
 const supabase = createClient(
@@ -107,11 +109,18 @@ export async function GET(request, { params }) {
     const { page, limit, status } = queryResult.data;
 
     // Verify project exists and user has access
+    console.log('🚀 [DEBUG] Verifying project exists...');
+    console.log('🚀 [DEBUG] Prisma client available:', !!prisma);
+    console.log('🚀 [DEBUG] Prisma project model available:', !!prisma.project);
+
     const project = await prisma.project.findUnique({
       where: { id: projectId }
     });
 
+    console.log('🚀 [DEBUG] Project query result:', project);
+
     if (!project) {
+      console.log('🚨 [DEBUG] Project not found');
       return NextResponse.json(
         {
           success: false,
@@ -124,6 +133,8 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
+
+    console.log('🚀 [DEBUG] Project found:', project.title);
 
     // Build where clause for filtering
     const whereClause = {
@@ -140,7 +151,15 @@ export async function GET(request, { params }) {
     // Fetch tasks with related data
     console.log('🚀 [DEBUG] Fetching tasks from database...');
     console.log('🚀 [DEBUG] Where clause:', whereClause);
-    const tasks = await prisma.task.findMany({
+    console.log('🚀 [DEBUG] Environment check:');
+    console.log('🚀 [DEBUG] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('🚀 [DEBUG] DIRECT_URL exists:', !!process.env.DIRECT_URL);
+    console.log('🚀 [DEBUG] Prisma client available:', !!prisma);
+    console.log('🚀 [DEBUG] Prisma task model available:', !!prisma.task);
+    console.log('🚀 [DEBUG] Prisma project model available:', !!prisma.project);
+
+      console.log('🚀 [DEBUG] Executing database query...');
+      const tasks = await prisma.task.findMany({
       where: whereClause,
       include: {
         project: {
@@ -341,7 +360,6 @@ export async function POST(request, { params }) {
             title: true,
           }
         }
-        // Removed assignee include for now - can be added back when needed
       }
     });
 

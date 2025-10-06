@@ -97,7 +97,7 @@ export function ProjectSidebar({ project, className }) {
       {/* Quick Actions Section */}
       {open && (
         <div className="p-4 border-t border-neutral-200 dark:border-neutral-700">
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <Button
               size="sm"
               className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white"
@@ -121,7 +121,7 @@ export function ProjectSidebar({ project, className }) {
               <IconPlus className="w-4 h-4 mr-2" />
               Schedule Meeting (soon)
             </Button>
-          </div> */}
+          </div>
 
           {/* Project Settings */}
           <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">

@@ -33,10 +33,9 @@ function TaskCard({
         <div className="flex items-center justify-between gap-2">
           <span className="line-clamp-1 font-medium text-sm">{task.title}</span>
           <Badge
-            variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'primary' : 'warning'}
+            variant="secondary"
             appearance="outline"
             className="pointer-events-none h-5 rounded-sm px-1.5 text-[11px] capitalize shrink-0">
-            {task.priority}
           </Badge>
         </div>
         <div
@@ -100,7 +99,6 @@ export default function Component() {
       {
         id: '1',
         title: 'Add authentication',
-        priority: 'high',
         assignee: 'John Doe',
         assigneeAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
         dueDate: 'Jan 10, 2025',
@@ -108,7 +106,6 @@ export default function Component() {
       {
         id: '2',
         title: 'Create API endpoints',
-        priority: 'medium',
         assignee: 'Jane Smith',
         assigneeAvatar: 'https://randomuser.me/api/portraits/women/2.jpg',
         dueDate: 'Jan 15, 2025',
@@ -116,7 +113,6 @@ export default function Component() {
       {
         id: '3',
         title: 'Write documentation',
-        priority: 'low',
         assignee: 'Bob Johnson',
         assigneeAvatar: 'https://randomuser.me/api/portraits/men/3.jpg',
         dueDate: 'Jan 20, 2025',
@@ -126,7 +122,6 @@ export default function Component() {
       {
         id: '4',
         title: 'Design system updates',
-        priority: 'high',
         assignee: 'Alice Brown',
         assigneeAvatar: 'https://randomuser.me/api/portraits/women/4.jpg',
         dueDate: 'Aug 25, 2025',
@@ -134,7 +129,6 @@ export default function Component() {
       {
         id: '5',
         title: 'Implement dark mode',
-        priority: 'medium',
         assignee: 'Charlie Wilson',
         assigneeAvatar: 'https://randomuser.me/api/portraits/men/5.jpg',
         dueDate: 'Aug 25, 2025',
@@ -144,7 +138,6 @@ export default function Component() {
       {
         id: '7',
         title: 'Setup project',
-        priority: 'high',
         assignee: 'Eve Davis',
         assigneeAvatar: 'https://randomuser.me/api/portraits/women/6.jpg',
         dueDate: 'Sep 25, 2025',
@@ -152,7 +145,6 @@ export default function Component() {
       {
         id: '8',
         title: 'Initial commit',
-        priority: 'low',
         assignee: 'Frank White',
         assigneeAvatar: 'https://randomuser.me/api/portraits/men/7.jpg',
         dueDate: 'Sep 20, 2025',
