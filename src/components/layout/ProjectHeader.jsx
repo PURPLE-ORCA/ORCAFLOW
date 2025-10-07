@@ -101,20 +101,17 @@ export function ProjectHeader({ project, className }) {
         <AnimatedThemeToggler className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors" />
 
         {/* Notifications */}
-        <DropdownMenu>
+            <UserInvitations />
+            
+        {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="relative p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors">
               <Bell className="w-4 h-4" />
-              {/* Badge for pending invitations - placeholder for now */}
-              <span className="absolute -top-1 -right-1 bg-[#2A0049] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-96 p-0">
-            <UserInvitations />
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
 
         {/* Project actions */}
         <div className="flex items-center gap-2">

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader } from '@/components/ui/loader';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function ProjectInvitations({ projectId }) {
@@ -14,6 +15,7 @@ export default function ProjectInvitations({ projectId }) {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Fetch pending invitations
   const fetchInvitations = async () => {
@@ -123,7 +125,7 @@ export default function ProjectInvitations({ projectId }) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
+          <CardTitle>Project Invitations</CardTitle>
           <CardDescription>Manage pending project invitations</CardDescription>
         </CardHeader>
         <CardContent>
@@ -140,7 +142,7 @@ export default function ProjectInvitations({ projectId }) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
+          <CardTitle>Project Invitations</CardTitle>
           <CardDescription>Manage pending project invitations</CardDescription>
         </CardHeader>
         <CardContent>
@@ -159,7 +161,7 @@ export default function ProjectInvitations({ projectId }) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
+          <CardTitle>Project Invitations</CardTitle>
           <CardDescription>Manage pending project invitations</CardDescription>
         </CardHeader>
         <CardContent>
@@ -172,53 +174,67 @@ export default function ProjectInvitations({ projectId }) {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
-        <CardDescription>Manage pending project invitations</CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-4 p-6">
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        {/* <Button variant="ghost" className="relative">
+          <Bell className="h-6 w-6" />
+          {invitations.length > 0 && (
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full">
+              {invitations.length}
+            </Badge>
+          )}
+        </Button> */}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuLabel>Project Invitations</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {loading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader className="h-4 w-4 mr-2" />
+            <span className="text-sm">Loading...</span>
+          </div>
+        ) : invitations.length > 0 ? (
+          <>
             {invitations.map((invitation) => (
-              <div
-                key={invitation.id}
-                className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
+              <DropdownMenuItem key={invitation.id} className="flex flex-col items-start space-y-2 p-4">
+                <div className="flex items-center space-x-2 w-full">
+                  <Avatar className="h-8 w-8">
                     <AvatarImage src={invitation.inviter.avatar} />
-                    <AvatarFallback className="bg-[#35005D] text-white">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
                       {invitation.inviter.name?.charAt(0) || invitation.inviter.email.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <p className="text-sm font-medium truncate">
-                        {invitation.inviter.name || invitation.inviter.email}
-                      </p>
-                      <Badge variant={getRoleBadgeVariant(invitation.role)} className="text-xs">
-                        {invitation.role}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Invited on {formatDate(invitation.createdAt)}
+                    <p className="text-sm font-medium truncate">
+                      {invitation.inviter.name || invitation.inviter.email}
                     </p>
-                    {invitation.expiresAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Expires on {formatDate(invitation.expiresAt)}
-                      </p>
-                    )}
+                    <Badge variant={getRoleBadgeVariant(invitation.role)} className="text-xs">
+                      {invitation.role}
+                    </Badge>
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-2">
+                <div className="w-full space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    Invited you to: <span className="font-medium">{invitation.project?.title || 'Unknown Project'}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(invitation.createdAt)}
+                  </p>
+                  {invitation.expiresAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Expires: {formatDate(invitation.expiresAt)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex space-x-2 w-full mt-2">
                   <Button
                     size="sm"
-                    onClick={() => acceptInvitation(invitation.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      acceptInvitation(invitation.id);
+                    }}
                     disabled={actionLoading === invitation.id}
-                    className="bg-[#2A0049] hover:bg-[#35005D] text-white"
+                    className="h-7 px-2 text-xs flex-1"
                   >
                     {actionLoading === invitation.id ? (
                       <>
@@ -229,13 +245,15 @@ export default function ProjectInvitations({ projectId }) {
                       'Accept'
                     )}
                   </Button>
-
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => declineInvitation(invitation.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      declineInvitation(invitation.id);
+                    }}
                     disabled={actionLoading === invitation.id}
-                    className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    className="h-7 px-2 text-xs flex-1 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                   >
                     {actionLoading === invitation.id ? (
                       <>
@@ -247,11 +265,13 @@ export default function ProjectInvitations({ projectId }) {
                     )}
                   </Button>
                 </div>
-              </div>
+              </DropdownMenuItem>
             ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+          </>
+        ) : (
+          <DropdownMenuItem>No pending invitations</DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

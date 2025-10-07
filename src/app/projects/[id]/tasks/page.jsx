@@ -433,7 +433,7 @@ export default function TasksPage({ params: initialParams }) {
             <KanbanColumn key={columnId} value={columnId}>
               <div className="p-4 bg-muted/30 rounded-lg min-h-[500px]">
                 <ColumnHeader title={column.title} count={column.items?.length || 0} />
-                <KanbanColumnContent value={columnId}>
+                <KanbanColumnContent className="bg-green-300 h-full" value={columnId}>
                   {column.items?.map((task) => (
                     <KanbanItem key={task.id} value={task.id}>
                       <TaskCard task={task} />
