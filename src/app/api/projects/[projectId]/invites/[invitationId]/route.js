@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabaseServer';
 import prisma from '@/lib/prisma/client';
 
 // PUT /api/projects/[projectId]/invites/[invitationId] - Accept an invitation
@@ -121,7 +121,11 @@ export async function DELETE(request, { params }) {
     const { projectId, invitationId } = await params;
 
     // Verify user is authenticated
+    console.log('🔍 DEBUG: Attempting to create Supabase client...');
     const supabase = createClient();
+    console.log('🔍 DEBUG: Supabase client created, checking if createClient function exists...');
+    console.log('🔍 DEBUG: createClient function:', typeof createClient);
+    console.log('🔍 DEBUG: Available exports from supabaseClient:', Object.keys(require('@/lib/supabaseClient')));
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
