@@ -21,34 +21,11 @@ export async function GET(request) {
 
     // Get the user from the JWT token
     // First, let's log the token structure for debugging
-    console.log('API /api/user/invites: Token analysis:', {
-      tokenLength: token?.length,
-      tokenPrefix: token?.substring(0, 20) + '...',
-      hasToken: !!token
-    });
     
     // Try to get the user using the token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
-    console.log('API /api/user/invites: Auth check:', {
-      hasAuthError: !!authError,
-      authErrorMessage: authError?.message,
-      authErrorDetails: authError,
-      hasUser: !!user,
-      userEmail: user?.email,
-      userId: user?.id
-    });
 
-    if (authError || !user) {
-      console.log('API /api/user/invites: Authentication failed');
-      console.log('API /api/user/invites: Auth error details:', authError);
-      return NextResponse.json(
-        { error: 'Unauthorized', details: authError?.message || 'No user found' },
-        { status: 401 }
-      );
-    }
-
-    console.log('API /api/user/invites: Authenticated user:', user.id, user.email);
 
     // Ensure user exists in our database (auto-sync with Supabase Auth)
     let dbUser = await prisma.user.findUnique({

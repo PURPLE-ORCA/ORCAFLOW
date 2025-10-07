@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import prisma from '@/lib/prisma/client';
 
 // GET /api/projects/[projectId]/invites - List pending invitations for a project
@@ -67,18 +67,35 @@ export async function POST(request, { params }) {
   try {
     const { projectId } = await params;
 
-    // Verify user is authenticated
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      console.error('No authorization header');
+      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    }
+
+    // Extract the JWT token
+    const token = authHeader.replace('Bearer ', '');
+    if (!token) {
+      console.error('No token provided');
+      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    }
+
+    // Get the user from the JWT token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
+      console.error('Authentication error:', authError);
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    console.log('Authenticated user:', user.id, 'Project ID:', projectId);
+
     // Check if user is an admin of the project
+    console.log('Checking membership for user:', user.id, 'in project:', projectId);
     const membership = await prisma.projectMember.findFirst({
       where: {
         projectId,
@@ -87,11 +104,52 @@ export async function POST(request, { params }) {
       },
     });
 
+    console.log('Membership found:', membership);
+
+    // Debug: Check if user is the project creator
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, title: true, createdBy: true }
+    });
+    console.log('Project details:', project);
+
+    // Debug: Check all memberships for this project
+    const allMemberships = await prisma.projectMember.findMany({
+      where: { projectId },
+      include: { user: { select: { id: true, email: true } } }
+    });
+    console.log('All project memberships:', allMemberships);
+
     if (!membership) {
-      return NextResponse.json(
-        { error: 'Access denied. Only project admins can send invitations.' },
-        { status: 403 }
-      );
+      console.error('No admin membership found for user:', user.id, 'in project:', projectId);
+
+      // Auto-fix: Add the project creator as an admin member if they're the creator
+      if (project.createdBy === user.id) {
+        console.log('User is project creator but missing admin membership. Auto-fixing...');
+        try {
+          await prisma.projectMember.create({
+            data: {
+              projectId,
+              userId: user.id,
+              role: 'ADMIN',
+            },
+          });
+          console.log('Successfully added project creator as admin member');
+
+          // Now proceed with the invitation since we fixed the membership
+        } catch (fixError) {
+          console.error('Failed to auto-fix admin membership:', fixError);
+          return NextResponse.json(
+            { error: 'Access denied. Only project admins can send invitations.' },
+            { status: 403 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { error: 'Access denied. Only project admins can send invitations.' },
+          { status: 403 }
+        );
+      }
     }
 
     const { email, role = 'MEMBER' } = await request.json();

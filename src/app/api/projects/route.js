@@ -61,6 +61,17 @@ export async function POST(request) {
       },
     });
 
+    // Automatically add the project creator as an ADMIN member
+    await prisma.projectMember.create({
+      data: {
+        projectId: project.id,
+        userId: user.id,
+        role: 'ADMIN',
+      },
+    });
+
+    console.log('Added project creator as ADMIN member:', user.id, 'for project:', project.id);
+
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error('Error creating project:', error);
@@ -110,37 +121,97 @@ export async function POST(request) {
 }
 
 export async function GET() {
-  try {
-    // Use a simpler query approach to avoid prepared statement conflicts
-    const projects = await prisma.$queryRaw`
-      SELECT id, title, description, "createdAt", "updatedAt", "createdBy"
-      FROM projects
-      ORDER BY "createdAt" DESC
-    `;
-    return NextResponse.json(projects, { status: 200 });
-  } catch (error) {
-    console.error('Error fetching projects:', error);
+   try {
+     // Use a simpler query approach to avoid prepared statement conflicts
+     const projects = await prisma.$queryRaw`
+       SELECT id, title, description, "createdAt", "updatedAt", "createdBy"
+       FROM projects
+       ORDER BY "createdAt" DESC
+     `;
+     return NextResponse.json(projects, { status: 200 });
+   } catch (error) {
+     console.error('Error fetching projects:', error);
 
-    // Handle specific Prisma prepared statement errors
-    if (error.code === '42P05' || error.message?.includes('prepared statement')) {
-      console.log('Prepared statement conflict detected, retrying with raw query...');
+     // Handle specific Prisma prepared statement errors
+     if (error.code === '42P05' || error.message?.includes('prepared statement')) {
+       console.log('Prepared statement conflict detected, retrying with raw query...');
 
-      // Wait a moment and retry once with raw query
-      await new Promise(resolve => setTimeout(resolve, 100));
+       // Wait a moment and retry once with raw query
+       await new Promise(resolve => setTimeout(resolve, 100));
 
-      try {
-        const projects = await prisma.$queryRaw`
-          SELECT id, title, description, "createdAt", "updatedAt", "createdBy"
-          FROM projects
-          ORDER BY "createdAt" DESC
-        `;
-        return NextResponse.json(projects, { status: 200 });
-      } catch (retryError) {
-        console.error('Retry failed:', retryError);
-        return NextResponse.json({ error: 'Failed to fetch projects after retry' }, { status: 500 });
-      }
-    }
+       try {
+         const projects = await prisma.$queryRaw`
+           SELECT id, title, description, "createdAt", "updatedAt", "createdBy"
+           FROM projects
+           ORDER BY "createdAt" DESC
+         `;
+         return NextResponse.json(projects, { status: 200 });
+       } catch (retryError) {
+         console.error('Retry failed:', retryError);
+         return NextResponse.json({ error: 'Failed to fetch projects after retry' }, { status: 500 });
+       }
+     }
 
-    return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
-  }
-}
+     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+   }
+ }
+
+// Fix existing projects by adding creators as admin members
+export async function PATCH() {
+   try {
+     console.log('Starting to fix existing projects...');
+
+     // Get all projects that don't have their creators as admin members
+     const projects = await prisma.$queryRaw`
+       SELECT p.id as project_id, p."createdBy" as creator_id
+       FROM projects p
+       WHERE NOT EXISTS (
+         SELECT 1 FROM "ProjectMember" pm
+         WHERE pm."projectId" = p.id
+         AND pm."userId" = p."createdBy"
+         AND pm.role = 'ADMIN'
+       )
+     `;
+
+     console.log(`Found ${projects.length} projects to fix`);
+
+     const results = [];
+     for (const project of projects) {
+       try {
+         // Add the creator as an admin member
+         await prisma.projectMember.create({
+           data: {
+             projectId: project.project_id,
+             userId: project.creator_id,
+             role: 'ADMIN',
+           },
+         });
+
+         results.push({
+           projectId: project.project_id,
+           creatorId: project.creator_id,
+           status: 'fixed'
+         });
+
+         console.log(`Fixed project ${project.project_id} - added creator ${project.creator_id} as admin`);
+       } catch (error) {
+         console.error(`Failed to fix project ${project.project_id}:`, error);
+         results.push({
+           projectId: project.project_id,
+           creatorId: project.creator_id,
+           status: 'error',
+           error: error.message
+         });
+       }
+     }
+
+     return NextResponse.json({
+       message: `Fixed ${results.filter(r => r.status === 'fixed').length} projects`,
+       results
+     }, { status: 200 });
+
+   } catch (error) {
+     console.error('Error fixing projects:', error);
+     return NextResponse.json({ error: 'Failed to fix projects' }, { status: 500 });
+   }
+ }
