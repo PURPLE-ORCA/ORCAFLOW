@@ -33,9 +33,7 @@ export default function UserInvitations() {
 
       // Try different API endpoints to find the correct one
       const endpoints = [
-        '/api/user/invites',
-        '/api/invitations',
-        '/api/projects/invitations'
+        '/api/user/invites'
       ];
       
       let response = null;
@@ -44,14 +42,37 @@ export default function UserInvitations() {
       for (const endpoint of endpoints) {
         try {
           console.log(`UserInvitations: Trying endpoint: ${endpoint}`);
-          response = await fetch(endpoint);
+          
+          // Add diagnostic logging for authentication
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          console.log('UserInvitations: Session check:', {
+            hasSession: !!session,
+            error: sessionError?.message,
+            userEmail: session?.user?.email
+          });
+          
+          // Add authentication headers to the request
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+          
+          // Add Authorization header if session exists
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+            console.log('UserInvitations: Added Authorization header');
+          }
+          
+          response = await fetch(endpoint, { headers });
           usedEndpoint = endpoint;
+          
+          console.log(`UserInvitations: Response status: ${response.status}`);
           
           if (response.ok) {
             console.log(`UserInvitations: Success with ${endpoint}`);
             break;
           } else {
-            console.log(`UserInvitations: Failed with ${endpoint}, status: ${response.status}`);
+            const errorText = await response.text();
+            console.log(`UserInvitations: Failed with ${endpoint}, status: ${response.status}, response: ${errorText}`);
           }
         } catch (endpointError) {
           console.log(`UserInvitations: Network error with ${endpoint}:`, endpointError);
@@ -78,8 +99,25 @@ export default function UserInvitations() {
     try {
       setActionLoading(invitation.id);
 
+      // Get session for Authorization header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw new Error('Authentication failed');
+      }
+
+      // Add authentication headers to the request
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add Authorization header if session exists
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/projects/${invitation.projectId}/invites/${invitation.id}`, {
         method: 'PUT',
+        headers,
       });
 
       if (!response.ok) {
@@ -114,8 +152,25 @@ export default function UserInvitations() {
     try {
       setActionLoading(invitation.id);
 
+      // Get session for Authorization header
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw new Error('Authentication failed');
+      }
+
+      // Add authentication headers to the request
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add Authorization header if session exists
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(`/api/projects/${invitation.projectId}/invites/${invitation.id}`, {
         method: 'DELETE',
+        headers,
       });
 
       if (!response.ok) {

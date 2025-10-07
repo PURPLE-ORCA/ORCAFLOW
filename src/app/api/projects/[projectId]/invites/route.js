@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabaseClient';
-import { prisma } from '@/lib/prisma/client';
+import prisma from '@/lib/prisma/client';
 
 // GET /api/projects/[projectId]/invites - List pending invitations for a project
 export async function GET(request, { params }) {
