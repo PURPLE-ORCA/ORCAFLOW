@@ -183,7 +183,8 @@ const InviteForm = ({ projectId, trigger, onSubmit }) => {
               <p className="text-sm text-red-500">{errors.role}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Members can view and edit project content. Admins can manage members and project settings.
+              Members can view and edit project content. 
+              Admins can manage members and project settings.
             </p>
           </div>
 

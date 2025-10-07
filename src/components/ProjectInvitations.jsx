@@ -7,14 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader } from '@/components/ui/loader';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function ProjectInvitations({ projectId }) {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState(null);
-  const supabase = createClient();
 
   // Fetch pending invitations
   const fetchInvitations = async () => {

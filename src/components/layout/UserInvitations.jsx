@@ -7,14 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader } from '@/components/ui/loader';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function UserInvitations() {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState(null);
-  const supabase = createClient();
 
   // Fetch pending invitations for current user
   const fetchInvitations = async () => {
@@ -22,28 +21,64 @@ export default function UserInvitations() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/user/invites');
+      console.log('UserInvitations: Starting fetch...');
+      
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication failed');
+      }
+      console.log('UserInvitations: User authenticated:', user?.email);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch invitations');
+      // Try different API endpoints to find the correct one
+      const endpoints = [
+        '/api/user/invites',
+        '/api/invitations',
+        '/api/projects/invitations'
+      ];
+      
+      let response = null;
+      let usedEndpoint = '';
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`UserInvitations: Trying endpoint: ${endpoint}`);
+          response = await fetch(endpoint);
+          usedEndpoint = endpoint;
+          
+          if (response.ok) {
+            console.log(`UserInvitations: Success with ${endpoint}`);
+            break;
+          } else {
+            console.log(`UserInvitations: Failed with ${endpoint}, status: ${response.status}`);
+          }
+        } catch (endpointError) {
+          console.log(`UserInvitations: Network error with ${endpoint}:`, endpointError);
+        }
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(`Failed to fetch invitations from all endpoints. Last tried: ${usedEndpoint}`);
       }
 
       const data = await response.json();
+      console.log('UserInvitations: Received data:', data);
       setInvitations(data.invitations || []);
     } catch (err) {
+      console.error('UserInvitations: Error details:', err);
       setError(err.message);
-      console.error('Error fetching invitations:', err);
     } finally {
       setLoading(false);
     }
   };
 
   // Accept invitation
-  const acceptInvitation = async (invitationId) => {
+  const acceptInvitation = async (invitation) => {
     try {
-      setActionLoading(invitationId);
+      setActionLoading(invitation.id);
 
-      const response = await fetch(`/api/projects/${invitationId}/invites/${invitationId}`, {
+      const response = await fetch(`/api/projects/${invitation.projectId}/invites/${invitation.id}`, {
         method: 'PUT',
       });
 
@@ -58,7 +93,13 @@ export default function UserInvitations() {
       console.log('Invitation accepted:', data.message);
 
       // Remove the invitation from the list
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      setInvitations(prev => prev.filter(inv => inv.id !== invitation.id));
+
+      // Redirect to the project page after successful acceptance
+      if (data.project && data.project.id) {
+        // Use Next.js router for client-side navigation
+        window.location.href = `/projects/${data.project.id}`;
+      }
 
     } catch (err) {
       setError(err.message);
@@ -69,11 +110,11 @@ export default function UserInvitations() {
   };
 
   // Decline invitation
-  const declineInvitation = async (invitationId) => {
+  const declineInvitation = async (invitation) => {
     try {
-      setActionLoading(invitationId);
+      setActionLoading(invitation.id);
 
-      const response = await fetch(`/api/projects/${invitationId}/invites/${invitationId}`, {
+      const response = await fetch(`/api/projects/${invitation.projectId}/invites/${invitation.id}`, {
         method: 'DELETE',
       });
 
@@ -88,7 +129,7 @@ export default function UserInvitations() {
       console.log('Invitation declined:', data.message);
 
       // Remove the invitation from the list
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      setInvitations(prev => prev.filter(inv => inv.id !== invitation.id));
 
     } catch (err) {
       setError(err.message);
@@ -122,8 +163,7 @@ export default function UserInvitations() {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
-          <CardDescription>Manage your pending project invitations</CardDescription>
+          <CardTitle >Project Invitations</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
@@ -139,8 +179,7 @@ export default function UserInvitations() {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
-          <CardDescription>Manage your pending project invitations</CardDescription>
+          <CardTitle >Project Invitations</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -158,8 +197,7 @@ export default function UserInvitations() {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
-          <CardDescription>Manage your pending project invitations</CardDescription>
+          <CardTitle >Project Invitations</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -173,8 +211,7 @@ export default function UserInvitations() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-[#2A0049]">Project Invitations</CardTitle>
-        <CardDescription>Manage your pending project invitations</CardDescription>
+        <CardTitle >Project Invitations</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[400px]">
@@ -218,7 +255,7 @@ export default function UserInvitations() {
                 <div className="flex items-center space-x-2">
                   <Button
                     size="sm"
-                    onClick={() => acceptInvitation(invitation.id)}
+                    onClick={() => acceptInvitation(invitation)}
                     disabled={actionLoading === invitation.id}
                     className="bg-[#2A0049] hover:bg-[#35005D] text-white"
                   >
@@ -235,7 +272,7 @@ export default function UserInvitations() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => declineInvitation(invitation.id)}
+                    onClick={() => declineInvitation(invitation)}
                     disabled={actionLoading === invitation.id}
                     className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                   >
