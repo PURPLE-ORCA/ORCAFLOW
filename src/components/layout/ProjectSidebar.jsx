@@ -80,13 +80,6 @@ export function ProjectSidebar({ project, className }) {
             >
               {project?.title || "Loading..."}
             </h2>
-            {open && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="secondary" className="text-xs">
-                  <IconUsers className="w-3 h-3 mr-1" />X members
-                </Badge>
-              </div>
-            )}
           </div>
         </div>
       </div>

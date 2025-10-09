@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -14,11 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+
 import {
   IconEdit,
   IconSettings,
@@ -33,12 +29,42 @@ import InviteForm from '../forms/InviteForm';
 import UserInvitations from './UserInvitations';
 
 export function ProjectHeader({ project, className }) {
-  const pathname = usePathname();
-  const params = useParams();
-  const projectId = params?.id;
+   const pathname = usePathname();
+   const params = useParams();
+   const projectId = params?.id;
 
-  // Generate breadcrumb items based on current path
-  const getBreadcrumbItems = () => {
+   // State for member count
+   const [memberCount, setMemberCount] = useState(null);
+
+   // Fetch member count when component mounts or projectId changes
+   useEffect(() => {
+     const fetchMemberCount = async () => {
+       if (!projectId) return;
+
+       try {
+         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+         const response = await fetch(`${baseUrl}/api/projects/${projectId}/members`, {
+           cache: 'no-store',
+         });
+
+         if (response.ok) {
+           const data = await response.json();
+           setMemberCount(data.members?.length || 0);
+         } else {
+           console.error('Failed to fetch member count');
+           setMemberCount(0);
+         }
+       } catch (error) {
+         console.error('Error fetching member count:', error);
+         setMemberCount(0);
+       }
+     };
+
+     fetchMemberCount();
+   }, [projectId]);
+
+   // Generate breadcrumb items based on current path
+   const getBreadcrumbItems = () => {
     const items = [
       { label: 'Projects', href: '/projects' }
     ];
@@ -64,10 +90,12 @@ export function ProjectHeader({ project, className }) {
   const breadcrumbItems = getBreadcrumbItems();
 
   return (
-    <div className={cn(
-      'flex items-center justify-between py-2 px-4 border-b border-[var(--main)] bg-background',
-      className
-    )}>
+    <div
+      className={cn(
+        "flex items-center justify-between py-2 px-4 border-b border-[var(--main)] bg-background",
+        className
+      )}
+    >
       {/* Left side - Breadcrumb */}
       <div className="flex items-center gap-4">
         <Breadcrumb>
@@ -97,21 +125,15 @@ export function ProjectHeader({ project, className }) {
 
       {/* Right side - Project actions and info */}
       <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="text-xs">
+              <IconUsers className="w-3 h-3 mr-1" />
+              {memberCount !== null ? `${memberCount} member${memberCount !== 1 ? 's' : ''}` : 'Loading...'}
+            </Badge>
         {/* Theme toggler */}
         <AnimatedThemeToggler className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors" />
 
         {/* Notifications */}
-            <UserInvitations />
-            
-        {/* <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="relative p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors">
-              <Bell className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-96 p-0">
-          </DropdownMenuContent>
-        </DropdownMenu> */}
+        <UserInvitations />
 
         {/* Project actions */}
         <div className="flex items-center gap-2">

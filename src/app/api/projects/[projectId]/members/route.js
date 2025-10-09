@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabaseServer';
 import prisma from '@/lib/prisma/client';
 
 // GET /api/projects/[projectId]/members - List all members of a project
