@@ -120,41 +120,79 @@ export async function POST(request) {
   }
 }
 
-export async function GET() {
-   try {
-     // Use a simpler query approach to avoid prepared statement conflicts
-     const projects = await prisma.$queryRaw`
-       SELECT id, title, description, "createdAt", "updatedAt", "createdBy"
-       FROM projects
-       ORDER BY "createdAt" DESC
-     `;
-     return NextResponse.json(projects, { status: 200 });
-   } catch (error) {
-     console.error('Error fetching projects:', error);
+export async function GET(request) {
+  try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    }
 
-     // Handle specific Prisma prepared statement errors
-     if (error.code === '42P05' || error.message?.includes('prepared statement')) {
-       console.log('Prepared statement conflict detected, retrying with raw query...');
+    // Extract the JWT token
+    const token = authHeader.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    }
 
-       // Wait a moment and retry once with raw query
-       await new Promise(resolve => setTimeout(resolve, 100));
+    // Get the user from the JWT token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-       try {
-         const projects = await prisma.$queryRaw`
-           SELECT id, title, description, "createdAt", "updatedAt", "createdBy"
-           FROM projects
-           ORDER BY "createdAt" DESC
-         `;
-         return NextResponse.json(projects, { status: 200 });
-       } catch (retryError) {
-         console.error('Retry failed:', retryError);
-         return NextResponse.json({ error: 'Failed to fetch projects after retry' }, { status: 500 });
-       }
-     }
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
 
-     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
-   }
- }
+    // Fetch projects where user is creator OR member
+    const projects = await prisma.$queryRaw`
+      SELECT p.id, p.title, p.description, p."createdAt", p."updatedAt", p."createdBy"
+      FROM projects p
+      WHERE p."createdBy" = ${user.id}::uuid
+         OR EXISTS (
+           SELECT 1 FROM project_members pm
+           WHERE pm."projectId" = p.id
+           AND pm."userId" = ${user.id}::uuid
+         )
+      ORDER BY p."createdAt" DESC
+    `;
+
+    return NextResponse.json(projects, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+
+    // Handle specific Prisma prepared statement errors
+    if (error.code === '42P05' || error.message?.includes('prepared statement')) {
+      console.log('Prepared statement conflict detected, retrying with user filtering...');
+
+      // Wait a moment and retry once with user filtering
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        // Get the authorization header again for retry
+        const authHeader = request.headers.get('authorization');
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+
+        const projects = await prisma.$queryRaw`
+          SELECT p.id, p.title, p.description, p."createdAt", p."updatedAt", p."createdBy"
+          FROM projects p
+          WHERE p."createdBy" = ${user.id}::uuid
+             OR EXISTS (
+               SELECT 1 FROM project_members pm
+               WHERE pm."projectId" = p.id
+               AND pm."userId" = ${user.id}::uuid
+             )
+          ORDER BY p."createdAt" DESC
+        `;
+        return NextResponse.json(projects, { status: 200 });
+      } catch (retryError) {
+        console.error('Retry failed:', retryError);
+        return NextResponse.json({ error: 'Failed to fetch projects after retry' }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+  }
+}
 
 // Fix existing projects by adding creators as admin members
 export async function PATCH() {

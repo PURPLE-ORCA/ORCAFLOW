@@ -19,7 +19,22 @@ export default function ProjectsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/projects');
+      // Get the current session to include the access token
+      const { supabase } = await import('@/lib/supabaseClient');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Include authorization header if user is logged in
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch('/api/projects', {
+        headers,
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch projects: ${response.statusText}`);
