@@ -458,20 +458,16 @@ function KanbanColumnContent({ value, className, children }) {
         data-slot="kanban-column-content"
         data-column-id={value}
         className={cn(
-          "flex flex-col gap-2 min-h-[200px] p-2 rounded-md transition-all duration-200",
+          "flex flex-col gap-2 min-h-[400px] p-2 rounded-md transition-all duration-200",
           isOver &&
             "bg-primary/10 border-2 border-dashed border-primary/50 ring-2 ring-primary/20",
           className
         )}
-        style={{
-          minHeight: "200px",
-          position: "relative",
-        }}
       >
         {children}
         {/* Visual indicator for empty columns */}
         {itemIds.length === 0 && (
-          <div className="flex items-center justify-center h-full text-muted-foreground text-sm border-2 border-dashed border-muted-foreground/25 rounded-md">
+          <div className="flex items-center justify-center  text-muted-foreground text-sm border-2 border-dashed border-muted-foreground/25 rounded-md">
             Drop tasks here
           </div>
         )}

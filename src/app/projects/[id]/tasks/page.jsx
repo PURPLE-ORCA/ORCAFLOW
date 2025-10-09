@@ -205,7 +205,6 @@ export default function TasksPage({ params: initialParams }) {
 
   // Handle drag and drop status updates with proper persistence
   const handleMove = async (event) => {
-
     const { active, over } = event;
 
     if (!over) {
@@ -215,6 +214,13 @@ export default function TasksPage({ params: initialParams }) {
 
     if (!active) {
       console.log('🚨 [KANBAN DEBUG] No active element - no item being dragged');
+      return;
+    }
+
+    // NEW: Validate that we're dropping on a valid target
+    const validDropTargets = ['todo', 'doing', 'done'];
+    if (!validDropTargets.includes(over.id)) {
+      console.log('🚨 [KANBAN DEBUG] Drop target not valid, canceling');
       return;
     }
 
@@ -255,7 +261,14 @@ export default function TasksPage({ params: initialParams }) {
       items: updatedColumns[sourceColumnId].items.filter(task => task.id !== activeTaskId)
     };
 
-    // Add to target column
+    // Validate that we're dropping on a valid column before creating new column
+    const validColumns = ['todo', 'doing', 'done'];
+    if (!validColumns.includes(overId)) {
+      console.log('🚨 [KANBAN DEBUG] Invalid drop target, canceling operation');
+      return;
+    }
+
+    // Add to target column (only if it's a valid column)
     if (!updatedColumns[overId]) {
       updatedColumns[overId] = { title: overId.charAt(0).toUpperCase() + overId.slice(1), items: [] };
     }
