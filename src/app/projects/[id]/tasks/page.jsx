@@ -123,16 +123,13 @@ export default function TasksPage({ params: initialParams }) {
     }
 
     try {
-      console.log('🚀 [DEBUG] Starting fetchTasks for project:', projectId);
       setLoading(true);
       setError(null);
 
       // Get authentication token from Supabase
-      console.log('🚀 [DEBUG] Getting Supabase session...');
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        console.log('🚨 [DEBUG] No authentication token found - user likely logged out');
         // Don't throw error for logout, just set empty state
         setColumns({
           todo: { title: 'Todo', items: [] },
@@ -142,9 +139,6 @@ export default function TasksPage({ params: initialParams }) {
         setLoading(false);
         return;
       }
-      console.log('🚀 [DEBUG] Got session for user:', session.user.email);
-
-      console.log('🚀 [DEBUG] Making API request to:', `/api/projects/${projectId}/tasks`);
       const response = await fetch(`/api/projects/${projectId}/tasks`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -152,18 +146,12 @@ export default function TasksPage({ params: initialParams }) {
         },
       });
 
-      console.log('🚀 [DEBUG] API response status:', response.status);
-
       if (!response.ok) {
-        console.log('🚨 [DEBUG] API response not ok, parsing error...');
         const errorData = await response.json();
-        console.log('🚨 [DEBUG] Error data:', errorData);
         throw new Error(errorData.error?.message || 'Failed to fetch tasks');
       }
 
-      console.log('🚀 [DEBUG] Parsing API response...');
       const { data: tasks } = await response.json();
-      console.log('🚀 [DEBUG] Successfully parsed tasks:', tasks?.length || 0, 'tasks');
 
       // Transform tasks data for Kanban board
       const transformedColumns = {
@@ -258,9 +246,6 @@ export default function TasksPage({ params: initialParams }) {
       return;
     }
 
-    // console.log('🚀 [KANBAN DEBUG] ========== UPDATING TASK ==========');
-    // console.log('🚀 [KANBAN DEBUG] Task:', movedTask.title, 'from', movedTask.status, 'to', overId);
-
     // Optimistic UI update - move task to new column immediately
     const updatedColumns = { ...columns };
 
@@ -281,7 +266,6 @@ export default function TasksPage({ params: initialParams }) {
 
     // Update local state immediately for smooth UX
     setColumns(updatedColumns);
-    // console.log('🚀 [KANBAN DEBUG] Optimistic UI update applied');
 
     try {
        // Get authentication token
@@ -297,7 +281,6 @@ export default function TasksPage({ params: initialParams }) {
 
       // Call API to update task status
       const apiUrl = `/api/tasks/${activeTaskId}`;
-      // console.log('🚀 [KANBAN DEBUG] Making API call to:', apiUrl);
 
       const response = await fetch(apiUrl, {
         method: 'PUT',
@@ -436,9 +419,9 @@ export default function TasksPage({ params: initialParams }) {
         <KanbanBoard>
           {Object.entries(columns).map(([columnId, column]) => (
             <KanbanColumn key={columnId} value={columnId}>
-              <div className="p-4 bg-muted/30 rounded-lg min-h-[500px]">
+              <div className="p-4 bg-muted/30 rounded-lg min-h-[900px]">
                 <ColumnHeader title={column.title} count={column.items?.length || 0} />
-                <KanbanColumnContent className="bg-green-300 h-full" value={columnId}>
+                <KanbanColumnContent className="h-full" value={columnId}>
                   {column.items?.map((task) => (
                     <KanbanItem key={task.id} value={task.id}>
                       <TaskCard task={task} />
@@ -457,7 +440,7 @@ export default function TasksPage({ params: initialParams }) {
                 Object.keys(columns).find(key => columns[key] === col) === value
               );
               return (
-                <div className="p-4 bg-background border rounded-lg shadow-lg min-w-[250px]">
+                <div className="p-4 bg-red-400 border rounded-lg shadow-lg min-w-[250px]">
                   <h3 className="font-semibold">{column?.title}</h3>
                 </div>
               );
