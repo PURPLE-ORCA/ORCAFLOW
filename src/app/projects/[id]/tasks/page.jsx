@@ -17,13 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, MoreHorizontal, Calendar, User, AlertCircle } from 'lucide-react';
 import TaskForm from '@/components/forms/TaskForm';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 // Task card component
 function TaskCard({ task }) {
@@ -101,6 +96,7 @@ function ColumnHeader({ title, count }) {
 }
 
 export default function TasksPage({ params: initialParams }) {
+  const { session } = useAuth();
   const [columns, setColumns] = React.useState({
     todo: { title: 'Todo', items: [] },
     doing: { title: 'Doing', items: [] },
@@ -136,8 +132,15 @@ export default function TasksPage({ params: initialParams }) {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        console.log('🚨 [DEBUG] No authentication token found');
-        throw new Error('No authentication token found');
+        console.log('🚨 [DEBUG] No authentication token found - user likely logged out');
+        // Don't throw error for logout, just set empty state
+        setColumns({
+          todo: { title: 'Todo', items: [] },
+          doing: { title: 'Doing', items: [] },
+          done: { title: 'Done', items: [] }
+        });
+        setLoading(false);
+        return;
       }
       console.log('🚀 [DEBUG] Got session for user:', session.user.email);
 
@@ -281,14 +284,16 @@ export default function TasksPage({ params: initialParams }) {
     // console.log('🚀 [KANBAN DEBUG] Optimistic UI update applied');
 
     try {
-      // Get authentication token
-      const { data: { session } } = await supabase.auth.getSession();
+       // Get authentication token
+       const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
-        throw new Error('Authentication required');
-      }
+       if (!session?.access_token) {
+         console.log('🚨 [KANBAN DEBUG] No authentication token found - user likely logged out');
+         // Don't throw error for logout, just skip the update
+         return;
+       }
 
-      // console.log('🚀 [KANBAN DEBUG] Got session for user:', session.user.email);
+       // console.log('🚀 [KANBAN DEBUG] Got session for user:', session.user.email);
 
       // Call API to update task status
       const apiUrl = `/api/tasks/${activeTaskId}`;

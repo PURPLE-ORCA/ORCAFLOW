@@ -37,10 +37,12 @@ export function ProjectSidebar({ project, className }) {
   const projectId = params?.id;
   const router = useRouter();
   const { user, signOut } = useAuth();
-  
+
   // Debug logging to validate assumptions
-  console.log('ProjectSidebar Debug - Auth context:', { user, signOut: typeof signOut });
-  console.log('ProjectSidebar Debug - Supabase client:', window.supabase ? 'Available' : 'Not available');
+  console.log("ProjectSidebar Debug - Auth context:", {
+    user,
+    signOut: typeof signOut,
+  });
 
   // Navigation items
   const navigationItems = [
@@ -188,7 +190,7 @@ export function ProjectSidebar({ project, className }) {
               <button
                 className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                 onClick={async () => {
-                  console.log('ProjectSidebar Debug - signOut called');
+                  console.log("ProjectSidebar Debug - signOut called");
                   await signOut();
                   router.push("/auth/signin");
                 }}

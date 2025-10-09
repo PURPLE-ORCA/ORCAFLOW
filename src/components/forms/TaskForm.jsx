@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CalendarIcon, Plus, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 const TaskForm = ({ onSubmit, trigger, projectId }) => {
+  const { session } = useAuth();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -29,12 +31,6 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-
-  // Initialize Supabase client
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
 
   // Form validation
   const validateForm = () => {
@@ -60,11 +56,11 @@ const TaskForm = ({ onSubmit, trigger, projectId }) => {
     setSubmitError('');
 
     try {
-      // Get authentication token
-      const { data: { session } } = await supabase.auth.getSession();
-
+      // Use session from AuthContext
       if (!session?.access_token) {
-        throw new Error('Authentication required. Please sign in again.');
+        console.log('🚨 [TaskForm] No authentication token found - user likely logged out');
+        setSubmitError('Authentication required. Please sign in again.');
+        return;
       }
 
       // Prepare task data for API
