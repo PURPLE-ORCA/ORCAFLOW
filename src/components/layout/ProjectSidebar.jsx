@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth/AuthContext";
+import Image from "next/image";
 
 export function ProjectSidebar({ project, className }) {
   const { open } = useSidebar();
@@ -72,20 +73,26 @@ export function ProjectSidebar({ project, className }) {
       <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <h2
-              className={cn(
-                "font-semibold text-neutral-900 dark:text-neutral-100 truncate",
-                !open && "text-sm"
-              )}
-            >
-              {project?.title || "Loading..."}
-            </h2>
+            <Link href="/">
+              <div className={cn("flex items-center justify-center", !open && "justify-center")}>
+                <Image
+                  src="/img/orcaLogo.png"
+                  alt="ORCAFLOW Logo"
+                  width={open ? 40 : 32}
+                  height={open ? 40 : 32}
+                  className={cn(
+                    "object-contain transition-all duration-200 cursor-pointer hover:opacity-80",
+                    !open && "w-10 h-10"
+                  )}
+                />
+              </div>
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Navigation Section */}
-      <div className="flex-1 p-4">
+      <div className="p-4">
         <nav className="space-y-1">
           {navigationItems.map((item) => (
             <Link key={item.href} href={item.href}>
@@ -135,8 +142,9 @@ export function ProjectSidebar({ project, className }) {
           </div>
         </div>
       )}
+
       {/* Account Menu */}
-      <div className=" flex-3 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+      <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -156,10 +164,8 @@ export function ProjectSidebar({ project, className }) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                    {user?.name || "User"}
-                  </div>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+
+                  <div className="text-xs text-foreground truncate">
                     {user?.email || ""}
                   </div>
                 </div>
