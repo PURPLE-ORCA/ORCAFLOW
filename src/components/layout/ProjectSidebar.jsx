@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useParams, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { useParams, usePathname } from "next/navigation";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarBody,
   SidebarLink,
-  useSidebar
-} from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   IconLayoutKanban,
   IconNotes,
@@ -20,15 +20,15 @@ import {
   IconPlus,
   IconSettings,
   IconUsers,
-  IconLogout
-} from '@tabler/icons-react';
+  IconLogout,
+} from "@tabler/icons-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/lib/auth/AuthContext';
+} from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export function ProjectSidebar({ project, className }) {
   const { open } = useSidebar();
@@ -37,14 +37,18 @@ export function ProjectSidebar({ project, className }) {
   const projectId = params?.id;
   const router = useRouter();
   const { user, signOut } = useAuth();
+  
+  // Debug logging to validate assumptions
+  console.log('ProjectSidebar Debug - Auth context:', { user, signOut: typeof signOut });
+  console.log('ProjectSidebar Debug - Supabase client:', window.supabase ? 'Available' : 'Not available');
 
   // Navigation items
   const navigationItems = [
     {
       href: `/projects/${projectId}/tasks`,
-      label: 'Tasks',
+      label: "Tasks",
       icon: <IconLayoutKanban className="w-5 h-5" />,
-      isActive: pathname === `/projects/${projectId}/tasks`
+      isActive: pathname === `/projects/${projectId}/tasks`,
     },
     // {
     //   href: `/projects/${projectId}/notes`,
@@ -61,22 +65,23 @@ export function ProjectSidebar({ project, className }) {
   ];
 
   return (
-    <SidebarBody className={cn('flex flex-col h-full', className)}>
+    <SidebarBody className={cn("flex flex-col h-full", className)}>
       {/* Project Info Section */}
       <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <h2 className={cn(
-              'font-semibold text-neutral-900 dark:text-neutral-100 truncate',
-              !open && 'text-sm'
-            )}>
-              {project?.title || 'Loading...'}
+            <h2
+              className={cn(
+                "font-semibold text-neutral-900 dark:text-neutral-100 truncate",
+                !open && "text-sm"
+              )}
+            >
+              {project?.title || "Loading..."}
             </h2>
             {open && (
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary" className="text-xs">
-                  <IconUsers className="w-3 h-3 mr-1" />
-                  X members
+                  <IconUsers className="w-3 h-3 mr-1" />X members
                 </Badge>
               </div>
             )}
@@ -89,16 +94,16 @@ export function ProjectSidebar({ project, className }) {
         <nav className="space-y-1">
           {navigationItems.map((item) => (
             <Link key={item.href} href={item.href}>
-              <div className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                item.isActive
-                  ? 'bg-purple-100 text-purple-900 dark:bg-purple-900/20 dark:text-purple-100'
-                  : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800'
-              )}>
-                {item.icon}
-                {open && (
-                  <span className="truncate">{item.label}</span>
+              <div
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  item.isActive
+                    ? "bg-purple-100 text-purple-900 dark:bg-purple-900/20 dark:text-purple-100"
+                    : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
                 )}
+              >
+                {item.icon}
+                {open && <span className="truncate">{item.label}</span>}
               </div>
             </Link>
           ))}
@@ -107,7 +112,7 @@ export function ProjectSidebar({ project, className }) {
 
       {/* Quick Actions Section */}
       {open && (
-        <div className="p-4 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="p-4 border-t flex-2 border-neutral-200 dark:border-neutral-700">
           <div className="space-y-2">
             <Button
               size="sm"
@@ -133,65 +138,68 @@ export function ProjectSidebar({ project, className }) {
               Schedule Meeting (soon)
             </Button>
           </div>
-
-          {/* Account Menu */}
-          <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full justify-start p-2 h-auto hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={user?.avatar_url || ''} alt={user?.name || 'User'} />
-                      <AvatarFallback>
-                        {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
-                        {user?.name || 'User'}
-                      </div>
-                      <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                        {user?.email || ''}
-                      </div>
-                    </div>
-                  </div>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                side="top"
-                className="w-80 mb-2 p-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="py-1">
-                  <button
-                    className="w-full text-left px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2"
-                    disabled
-                  >
-                    <IconSettings className="w-4 h-4" />
-                    Settings (soon)
-                  </button>
-                  <button
-                    className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                    onClick={async () => {
-                      await signOut();
-                      router.push('/auth/signin');
-                    }}
-                  >
-                    <IconLogout className="w-4 h-4" />
-                    Log out
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
         </div>
       )}
+      {/* Account Menu */}
+      <div className=" flex-3 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="w-full justify-start p-2 h-auto hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage
+                    src={user?.avatar_url || ""}
+                    alt={user?.name || "User"}
+                  />
+                  <AvatarFallback>
+                    {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                    {user?.name || "User"}
+                  </div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                    {user?.email || ""}
+                  </div>
+                </div>
+              </div>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            side="top"
+            className="w-80 mb-2 p-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="py-1">
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2"
+                disabled
+              >
+                <IconSettings className="w-4 h-4" />
+                Settings (soon)
+              </button>
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                onClick={async () => {
+                  console.log('ProjectSidebar Debug - signOut called');
+                  await signOut();
+                  router.push("/auth/signin");
+                }}
+              >
+                <IconLogout className="w-4 h-4" />
+                Log out
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </SidebarBody>
   );
 }

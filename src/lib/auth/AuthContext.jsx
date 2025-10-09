@@ -156,6 +156,15 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
   };
 
+  // Debug logging to validate context export
+  console.log('AuthContext Debug - Exported value:', {
+    user: !!user,
+    session: !!session,
+    loading,
+    signOut: typeof signOut,
+    hasAllFunctions: !!(signIn && signUp && signInWithGoogle && signOut && resetPassword && updatePassword)
+  });
+
   return (
     <AuthContext.Provider value={value}>
       {children}
