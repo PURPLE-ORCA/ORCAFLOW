@@ -196,7 +196,7 @@ function BadgeButton({
     <Comp
       data-slot="badge-button"
       className={cn(badgeButtonVariants({ variant, className }))}
-      role="button"
+      role={asChild ? undefined : "button"}
       {...props} />
   );
 }
