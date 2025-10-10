@@ -151,7 +151,7 @@ export default function Welcome() {
               className="space-y-4 mt-50"
             >
               <p className="text-muted-foreground">
-                Ready to streamline your team's workflow?
+                Ready to streamline your team&apos;s workflow?
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/auth/signin">
